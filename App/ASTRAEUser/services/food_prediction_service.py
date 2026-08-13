@@ -1,13 +1,10 @@
 from datetime import datetime
-from .prediction_base import AEECFPredictor
+from .prediction_base import get_cached_predictor
 
-_food_predictor = None
 
 def get_food_predictor():
-    global _food_predictor
-    if _food_predictor is None:
-        _food_predictor = AEECFPredictor('Food_model', 'aeecf_food_catboost_model.pkl')
-    return _food_predictor
+    return get_cached_predictor('food', 'Food_model', 'aeecf_food_catboost_model.pkl')
+
 
 def predict_food_price(metadata):
     now = datetime.now()
@@ -16,6 +13,10 @@ def predict_food_price(metadata):
     food_price = float(metadata.get('food_price', 200.0))
     coupon_discount = float(metadata.get('coupon_discount', 0.0))
     cashback = float(metadata.get('cashback', 0.0))
+    fallback = max(0.0, food_price - coupon_discount)
+
+    if predictor is None:
+        return round(fallback, 2)
 
     feature_dict = {
         'platform': metadata.get('platform', 'Swiggy'),
@@ -44,4 +45,7 @@ def predict_food_price(metadata):
         'is_weekend': 1 if now.weekday() >= 5 else 0
     }
 
-    return round(predictor.predict(feature_dict), 2)
+    try:
+        return round(predictor.predict(feature_dict), 2)
+    except Exception:
+        return round(fallback, 2)

@@ -56,7 +56,7 @@
   {% if messages %}
   <div class="mb-6 space-y-2">
     {% for message in messages %}
-    <div class="alert-success">{{ message }}</div>
+    <div class="{% if message.tags == 'error' %}alert-error{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %}">{{ message }}</div>
     {% endfor %}
   </div>
   {% endif %}

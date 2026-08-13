@@ -181,5 +181,5 @@ class MockMedicineProvider(BaseProvider):
             savings=round(original - final + cashback, 2),
             provider_url='#',
             eta_mins=hours * 60,
-            badge='Rx Required' if 'prescription' in query2.lower() else 'In Stock',
+            badge='Rx Required' if 'prescription' in (query2 or '').lower() else 'In Stock',
         )]

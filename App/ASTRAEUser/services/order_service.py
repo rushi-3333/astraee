@@ -14,10 +14,15 @@ DATASET_PATH = os.path.join(settings.BASE_DIR, 'Model', 'user_interaction_rl_dat
 def process_booking(user, platform, category, item_title, final_price,
                     original_price=None, discount=0, coupon_applied='', cashback=0,
                     event=None, scheduled_at=None, time_slot='', quantity=1,
-                    pickup_location='', delivery_address='', booking_notes=''):
+                    pickup_location='', delivery_address='', booking_notes='',
+                    coupon_discount=0, applied_coupon=None):
     fp = Decimal(str(final_price))
     op = Decimal(str(original_price)) if original_price else fp
-    savings = max(Decimal('0'), op - fp) + Decimal(str(cashback))
+    coupon_disc = Decimal(str(coupon_discount or 0))
+    if coupon_disc > 0:
+        fp = max(Decimal('0'), fp - coupon_disc)
+    base_discount = Decimal(str(discount))
+    savings = max(Decimal('0'), op - fp) + Decimal(str(cashback)) + coupon_disc
 
     order = Order.objects.create(
         user=user,
@@ -26,7 +31,7 @@ def process_booking(user, platform, category, item_title, final_price,
         item_title=item_title,
         final_price=fp,
         original_price=op,
-        discount=Decimal(str(discount)),
+        discount=base_discount + coupon_disc,
         coupon_applied=coupon_applied,
         cashback=Decimal(str(cashback)),
         astrae_savings=savings,
@@ -39,6 +44,10 @@ def process_booking(user, platform, category, item_title, final_price,
         delivery_address=delivery_address or '',
         booking_notes=booking_notes or '',
     )
+
+    if applied_coupon:
+        from .coupon_apply_service import redeem_coupon
+        redeem_coupon(applied_coupon)
 
     earned_points = get_rule_points('order_completed', fallback=20)
     reward = grant_reward(

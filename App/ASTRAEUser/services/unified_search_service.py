@@ -11,7 +11,13 @@ def execute_smart_search(category: str, q1: str, q2: str, limit: int = 12) -> di
     2. ASTRAE Score computation
     3. AIRE ML ranking overlay
     """
-    raw_results = search_all_providers(category, q1, q2, limit=limit)
+    provider_output = search_all_providers(category, q1, q2, limit=limit)
+    if isinstance(provider_output, dict):
+        raw_results = provider_output.get('results', [])
+        provider_errors = provider_output.get('errors', [])
+    else:
+        raw_results = provider_output or []
+        provider_errors = []
 
     if not raw_results:
         return {
@@ -20,7 +26,8 @@ def execute_smart_search(category: str, q1: str, q2: str, limit: int = 12) -> di
             'results': [],
             'total_count': 0,
             'highlights': {},
-            'errors': [],
+            'errors': provider_errors,
+            'partial_failure': False,
         }
 
     scored = compute_astrae_scores(raw_results)
@@ -46,5 +53,6 @@ def execute_smart_search(category: str, q1: str, q2: str, limit: int = 12) -> di
         'results': final[1:] if len(final) > 1 else [],
         'total_count': len(final),
         'highlights': highlights,
-        'errors': [],
+        'errors': provider_errors,
+        'partial_failure': bool(provider_errors),
     }

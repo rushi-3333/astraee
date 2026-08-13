@@ -2,9 +2,8 @@
 from datetime import date
 
 from django.db import transaction
-from django.db.models import Sum
 
-from ASTRAEUser.models import UserCoupon, Reward
+from ASTRAEUser.models import UserCoupon, Reward, Wallet
 from ASTRAEUser.services.reward_service import grant_reward, get_rule_points
 from ASTRAEUser.services.notification_service import create_notification
 from ASTRAEUser.services.wallet_service import sync_wallet_from_rewards
@@ -46,13 +45,13 @@ def purchase_coupon_atomic(buyer, coupon_id):
         raise CouponPurchaseError('This coupon has expired.')
 
     sync_wallet_from_rewards(buyer)
-    buyer_points = Reward.objects.filter(user=buyer).aggregate(
-        Sum('points_earned')
-    )['points_earned__sum'] or 0
+    wallet, _ = Wallet.objects.select_for_update().get_or_create(user=buyer)
+    sync_wallet_from_rewards(buyer)
+    wallet.refresh_from_db()
 
-    if buyer_points < coupon.price_in_points:
+    if wallet.reward_points < coupon.price_in_points:
         raise CouponPurchaseError(
-            f'Insufficient balance! Need {coupon.price_in_points} PTS, have {buyer_points} PTS.'
+            f'Insufficient balance! Need {coupon.price_in_points} PTS, have {wallet.reward_points} PTS.'
         )
 
     coupon.status = 'reserved'

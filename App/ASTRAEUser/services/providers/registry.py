@@ -39,8 +39,8 @@ def get_providers_for_category(category: str) -> list:
     return [cls(p) for p in platforms]
 
 
-def search_all_providers(category: str, q1: str, q2: str, limit: int = 10) -> List[dict]:
-    """Search all providers in parallel, return normalized dicts."""
+def search_all_providers(category: str, q1: str, q2: str, limit: int = 10) -> dict:
+    """Search all providers in parallel; returns results and per-platform errors."""
     providers = get_providers_for_category(category)
     results = []
     errors = []
@@ -72,7 +72,7 @@ def search_all_providers(category: str, q1: str, q2: str, limit: int = 10) -> Li
                 results.append(r)
                 seen.add(key)
 
-    return results[:limit * 3]
+    return {'results': results[:limit * 3], 'errors': errors}
 
 
 def _try_chroma_search(category: str, q1: str, q2: str, limit: int) -> List[dict]:

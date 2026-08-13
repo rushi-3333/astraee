@@ -13,6 +13,18 @@ def execute_unified_search(category, q1, q2, limit=10):
     4. Intelligent Recommendation: Pass candidate predictions through AIRE RL engine.
     5. Orchestration: Return ranked results array for view layer filtering/sorting.
     """
+    try:
+        return _execute_unified_search(category, q1, q2, limit=limit)
+    except Exception:
+        return {
+            'all_results': [],
+            'recommended': None,
+            'results': [],
+            'total_count': 0,
+        }
+
+
+def _execute_unified_search(category, q1, q2, limit=10):
     results = []
 
     if category == 'ride':

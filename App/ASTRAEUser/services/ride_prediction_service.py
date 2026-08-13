@@ -1,17 +1,18 @@
 from datetime import datetime
-from .prediction_base import AEECFPredictor
+from .prediction_base import get_cached_predictor
 
-_ride_predictor = None
 
 def get_ride_predictor():
-    global _ride_predictor
-    if _ride_predictor is None:
-        _ride_predictor = AEECFPredictor('Ride_model', 'aeecf_catboost_model.pkl')
-    return _ride_predictor
+    return get_cached_predictor('ride', 'Ride_model', 'aeecf_catboost_model.pkl')
+
 
 def predict_ride_price(metadata):
     now = datetime.now()
     predictor = get_ride_predictor()
+    fallback_price = float(metadata.get('fare_price', metadata.get('base_fare', 150.0)))
+
+    if predictor is None:
+        return round(fallback_price, 2)
 
     feature_dict = {
         'platform': metadata.get('platform', 'Uber'),
@@ -39,4 +40,7 @@ def predict_ride_price(metadata):
         'demand_score': 3
     }
 
-    return round(predictor.predict(feature_dict), 2)
+    try:
+        return round(predictor.predict(feature_dict), 2)
+    except Exception:
+        return round(fallback_price, 2)

@@ -43,9 +43,14 @@ def get_embedding_function():
     return _embedding_fn
 
 def get_collection(collection_name):
-    client = get_chroma_client()
-    embedding_fn = get_embedding_function()
-    return client.get_collection(
-        name=collection_name,
-        embedding_function=embedding_fn
-    )
+    if not os.path.exists(CHROMA_DB_PATH):
+        raise RuntimeError('ChromaDB data directory is not available')
+    try:
+        client = get_chroma_client()
+        embedding_fn = get_embedding_function()
+        return client.get_collection(
+            name=collection_name,
+            embedding_function=embedding_fn
+        )
+    except Exception as exc:
+        raise RuntimeError(f'Chroma collection unavailable: {collection_name}') from exc

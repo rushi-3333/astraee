@@ -1,13 +1,10 @@
 from datetime import datetime
-from .prediction_base import AEECFPredictor
+from .prediction_base import get_cached_predictor
 
-_medicine_predictor = None
 
 def get_medicine_predictor():
-    global _medicine_predictor
-    if _medicine_predictor is None:
-        _medicine_predictor = AEECFPredictor('medicine_model', 'aeecf_medicine_catboost_model.pkl')
-    return _medicine_predictor
+    return get_cached_predictor('medicine', 'medicine_model', 'aeecf_medicine_catboost_model.pkl')
+
 
 def predict_medicine_price(metadata):
     now = datetime.now()
@@ -17,6 +14,10 @@ def predict_medicine_price(metadata):
     selling_price = float(metadata.get('selling_price', 90.0))
     coupon_discount = float(metadata.get('coupon_discount', 0.0))
     cashback = float(metadata.get('cashback', 0.0))
+    fallback = float(metadata.get('final_price', selling_price))
+
+    if predictor is None:
+        return round(fallback, 2)
 
     feature_dict = {
         'platform': metadata.get('platform', 'Netmeds'),
@@ -46,4 +47,7 @@ def predict_medicine_price(metadata):
         'is_weekend': 1 if now.weekday() >= 5 else 0
     }
 
-    return round(predictor.predict(feature_dict), 2)
+    try:
+        return round(predictor.predict(feature_dict), 2)
+    except Exception:
+        return round(fallback, 2)

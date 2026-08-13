@@ -7,9 +7,11 @@ from django.contrib.auth import update_session_auth_hash
 from django.db.models import Sum, Count
 from django.db import transaction
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST, require_GET
 from datetime import timedelta, date, datetime
 import json
+from decimal import Decimal
 
 from .models import (
     Order, Reward, UserCoupon, Deal, WishlistItem, PriceAlert,
@@ -26,8 +28,14 @@ from .services.booking_service import (
     build_scheduled_at, category_needs_address, category_needs_pickup,
     category_needs_quantity, get_default_booking_date, get_event_date_bounds,
 )
+from .services.booking_price_service import resolve_booking_prices
+from .services.coupon_apply_service import (
+    get_applicable_coupons, apply_coupon_at_booking, CouponApplyError,
+)
+from .services.order_cancel_service import cancel_order as cancel_user_order, OrderCancelError
+from .services.daily_login_service import grant_daily_login_bonus
 from .services.wallet_service import get_wallet_summary, sync_wallet_from_rewards
-from .services.reward_service import grant_reward, get_rule_points, ensure_default_rules
+from .services.reward_service import grant_reward, get_rule_points, ensure_default_rules, InsufficientPointsError
 from .services.coupon_verifier import verify_and_update_coupon, DemoCouponVerifier
 from .services.coupon_pricing_service import suggest_coupon_price
 from .services.personalization_service import get_personalized_recommendations
@@ -196,6 +204,8 @@ def usersearch(request):
         'results': other_results,
         'total_count': len(all_candidates),
         'highlights': search_output.get('highlights', {}),
+        'search_errors': search_output.get('errors', []),
+        'partial_failure': search_output.get('partial_failure', False),
         'unread_notifications': get_unread_count(request.user),
         'categories_list': [
             ('ride', 'Rides', '🚗'), ('food', 'Food', '🍔'), ('grocery', 'Grocery', '🛒'),
@@ -303,20 +313,30 @@ def book_offer(request):
     if event_id:
         event = get_object_or_404(PlatformEvent, pk=event_id, is_active=True)
 
+    q1 = request.GET.get('q1') or request.POST.get('q1', '')
+    q2 = request.GET.get('q2') or request.POST.get('q2', '')
+
     if event:
         platform = event.platform_name
         category = event.category
         item_title = event.title
-        final_price = '0'
-        original_price = '0'
-        cashback = '0'
+        prices = resolve_booking_prices(platform, category, item_title, q1, q2, event=event)
+        final_price = str(prices['final_price'])
+        original_price = str(prices['original_price'])
+        cashback = str(prices['cashback'])
+        discount = str(prices['discount'])
     else:
         platform = request.GET.get('platform') or request.POST.get('platform', '')
         category = request.GET.get('category') or request.POST.get('category', 'shopping')
         item_title = request.GET.get('item_title') or request.POST.get('item_title', '')
-        final_price = request.GET.get('final_price') or request.POST.get('final_price', '0')
-        original_price = request.GET.get('original_price') or request.POST.get('original_price', final_price)
-        cashback = request.GET.get('cashback') or request.POST.get('cashback', '0')
+        prices = resolve_booking_prices(platform, category, item_title, q1, q2)
+        if not prices:
+            messages.error(request, 'Could not verify pricing. Please search again and re-select your option.')
+            return redirect(f"{reverse('usersearch')}?{urlencode({'category': category, 'q1': q1, 'q2': q2})}")
+        final_price = str(prices['final_price'])
+        original_price = str(prices['original_price'])
+        cashback = str(prices['cashback'])
+        discount = str(prices['discount'])
 
     if not platform or not item_title:
         messages.error(request, 'Missing booking details. Please select an offer or compare result again.')
@@ -328,9 +348,39 @@ def book_offer(request):
             for msg in errors.values():
                 messages.error(request, msg)
         else:
+            if not event:
+                verified = resolve_booking_prices(
+                    platform, category, item_title,
+                    request.POST.get('q1', q1), request.POST.get('q2', q2),
+                )
+                if not verified:
+                    messages.error(request, 'Pricing could not be verified. Please search and try again.')
+                    return redirect(f"{reverse('usersearch')}?{urlencode({'category': category, 'q1': q1, 'q2': q2})}")
+                final_price = str(verified['final_price'])
+                original_price = str(verified['original_price'])
+                cashback = str(verified['cashback'])
+                discount = str(verified['discount'])
+
             scheduled_date = datetime.strptime(request.POST['scheduled_date'], '%Y-%m-%d').date()
             time_slot = request.POST['time_slot']
             scheduled_at = build_scheduled_at(scheduled_date, time_slot)
+
+            coupon_id = request.POST.get('coupon_id', '').strip()
+            applied_coupon = None
+            coupon_discount = Decimal('0')
+            coupon_code = ''
+            try:
+                applied_coupon, coupon_discount, coupon_code = apply_coupon_at_booking(
+                    request.user, coupon_id, final_price, platform,
+                )
+            except CouponApplyError as exc:
+                messages.error(request, str(exc))
+                return redirect(f"{reverse('book_offer')}?{urlencode({
+                    'platform': platform, 'category': category,
+                    'item_title': item_title, 'q1': q1, 'q2': q2,
+                    **({'event_id': event_id} if event_id else {}),
+                })}")
+
             order, reward, coupon = process_booking(
                 user=request.user,
                 platform=platform,
@@ -338,8 +388,8 @@ def book_offer(request):
                 item_title=item_title,
                 final_price=final_price,
                 original_price=original_price,
-                discount=request.POST.get('discount', 0),
-                coupon_applied=request.POST.get('coupon', ''),
+                discount=discount,
+                coupon_applied=coupon_code,
                 cashback=cashback,
                 event=event,
                 scheduled_at=scheduled_at,
@@ -348,13 +398,17 @@ def book_offer(request):
                 pickup_location=request.POST.get('pickup_location', ''),
                 delivery_address=request.POST.get('delivery_address', ''),
                 booking_notes=request.POST.get('booking_notes', ''),
+                coupon_discount=coupon_discount,
+                applied_coupon=applied_coupon,
             )
             slot_label = dict(TIME_SLOTS).get(time_slot, time_slot)
-            messages.success(
-                request,
+            success_msg = (
                 f'Booking confirmed on {order.platform} for {scheduled_at:%b %d, %Y} ({slot_label}). '
-                f'+{reward.points_earned} points & coupon {coupon.coupon_code} earned.',
+                f'+{reward.points_earned} points & coupon {coupon.coupon_code} earned.'
             )
+            if coupon_code:
+                success_msg += f' Applied your coupon {coupon_code} (saved ₹{coupon_discount}).'
+            messages.success(request, success_msg)
             return redirect('userorders')
 
     color, initial = PLATFORM_COLORS.get(platform, ('#4F46E5', platform[:2]))
@@ -378,6 +432,8 @@ def book_offer(request):
         'platform': platform,
         'category': category,
         'item_title': item_title,
+        'q1': q1,
+        'q2': q2,
         'final_price': final_price,
         'original_price': original_price,
         'cashback': cashback,
@@ -392,6 +448,7 @@ def book_offer(request):
         'needs_pickup': category_needs_pickup(category),
         'needs_quantity': category_needs_quantity(category),
         'form_data': form_data,
+        'applicable_coupons': get_applicable_coupons(request.user, platform) if request.user.is_authenticated else [],
         'unread_notifications': get_unread_count(request.user),
     }
     return render(request, 'User/userbook.html', context)
@@ -459,6 +516,18 @@ def reschedule_order(request, order_id):
     return redirect('userorders')
 
 
+@login_required
+@require_POST
+def cancel_order(request, order_id):
+    try:
+        order = cancel_user_order(request.user, order_id)
+    except OrderCancelError as exc:
+        messages.error(request, str(exc))
+        return redirect('userorders')
+    messages.success(request, f'Booking cancelled: {order.item_title} on {order.platform}.')
+    return redirect('userorders')
+
+
 # ─── WISHLIST ────────────────────────────────────────────────────────────────
 
 @login_required
@@ -496,7 +565,12 @@ def add_to_wishlist(request):
         lowest_price=request.POST.get('current_price', 0) or 0,
     )
     messages.success(request, 'Added to wishlist!')
-    return redirect(request.POST.get('next', 'userwishlist'))
+    next_url = request.POST.get('next', '')
+    if not next_url or not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse('userwishlist')
+    return redirect(next_url)
 
 
 @login_required
@@ -563,6 +637,7 @@ def userprofile(request):
 
 
 @login_required
+@require_POST
 def update_profile(request):
     if request.method == 'POST':
         user = request.user
@@ -570,6 +645,7 @@ def update_profile(request):
         user.last_name = request.POST.get('last_name', '').strip()
         user.email = request.POST.get('email', '').strip()
         new_password = request.POST.get('new_password', '').strip()
+        current_password = request.POST.get('current_password', '').strip()
 
         pref, _ = UserPreference.objects.get_or_create(user=user)
         pref.phone = request.POST.get('phone', '').strip()
@@ -582,6 +658,9 @@ def update_profile(request):
         pref.save()
 
         if new_password:
+            if not current_password or not user.check_password(current_password):
+                messages.error(request, 'Current password is incorrect. Password was not changed.')
+                return redirect('userprofile')
             user.set_password(new_password)
             user.save()
             update_session_auth_hash(request, user)
@@ -670,7 +749,7 @@ def sell_coupon(request, coupon_id):
 def buy_coupon(request, coupon_id):
     try:
         coupon = purchase_coupon_atomic(request.user, coupon_id)
-    except CouponPurchaseError as exc:
+    except (CouponPurchaseError, InsufficientPointsError) as exc:
         messages.error(request, str(exc))
         return redirect('usercoupons')
     messages.success(request, f"Purchased coupon for {coupon.price_in_points} PTS!")

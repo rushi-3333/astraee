@@ -1,13 +1,10 @@
 from datetime import datetime
-from .prediction_base import AEECFPredictor
+from .prediction_base import get_cached_predictor
 
-_shopping_predictor = None
 
 def get_shopping_predictor():
-    global _shopping_predictor
-    if _shopping_predictor is None:
-        _shopping_predictor = AEECFPredictor('Shopping_model', 'aeecf_shopping_catboost_model.pkl')
-    return _shopping_predictor
+    return get_cached_predictor('shopping', 'Shopping_model', 'aeecf_shopping_catboost_model.pkl')
+
 
 def predict_shopping_price(metadata):
     now = datetime.now()
@@ -17,6 +14,10 @@ def predict_shopping_price(metadata):
     selling_price = float(metadata.get('selling_price', 900.0))
     coupon_discount = float(metadata.get('coupon_discount', 0.0))
     cashback = float(metadata.get('cashback', 0.0))
+    fallback = selling_price
+
+    if predictor is None:
+        return round(fallback, 2)
 
     feature_dict = {
         'platform': metadata.get('platform', 'Amazon'),
@@ -49,4 +50,7 @@ def predict_shopping_price(metadata):
         'is_weekend': 1 if now.weekday() >= 5 else 0
     }
 
-    return round(predictor.predict(feature_dict), 2)
+    try:
+        return round(predictor.predict(feature_dict), 2)
+    except Exception:
+        return round(fallback, 2)

@@ -29,8 +29,21 @@ def get_rule_points(key: str, fallback: int = 20) -> int:
         return fallback
 
 
+class InsufficientPointsError(Exception):
+    pass
+
+
 @transaction.atomic
 def grant_reward(user, points: int, description: str, order=None, rule_key: str = '', status: str = 'earned'):
+    if points < 0:
+        from ASTRAEUser.models import Wallet
+        sync_wallet_from_rewards(user)
+        wallet, _ = Wallet.objects.select_for_update().get_or_create(user=user)
+        sync_wallet_from_rewards(user)
+        wallet.refresh_from_db()
+        if wallet.reward_points + points < 0:
+            raise InsufficientPointsError('Insufficient reward points for this transaction.')
+
     reward = Reward.objects.create(
         user=user,
         order=order,

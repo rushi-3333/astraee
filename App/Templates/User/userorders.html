@@ -70,11 +70,18 @@
 
     {% if order.status != 'cancelled' and order.status != 'completed' and order.status != 'refunded' %}
     <div class="mt-4 border-t border-border pt-4">
-      <button type="button" class="text-sm font-semibold text-indigo hover:underline"
-              data-toggle-reschedule="reschedule-{{ order.id }}">
-        Change date & time
-      </button>
-      <div id="reschedule-{{ order.id }}" class="reschedule-panel hidden">
+      <div class="flex flex-wrap items-center gap-4">
+        <button type="button" class="text-sm font-semibold text-indigo hover:underline"
+                data-toggle-reschedule="reschedule-{{ order.id }}">
+          Change date & time
+        </button>
+        <form method="POST" action="{% url 'cancel_order' order.id %}" class="inline"
+              onsubmit="return confirm('Cancel this booking on {{ order.platform }}?');">
+          {% csrf_token %}
+          <button type="submit" class="text-sm font-semibold text-destructive hover:underline">Cancel booking</button>
+        </form>
+      </div>
+      <div id="reschedule-{{ order.id }}" class="reschedule-panel hidden mt-4">
         <p class="text-sm font-semibold mb-3">Update schedule for this offer</p>
         <form method="POST" action="{% url 'reschedule_order' order.id %}">
           {% csrf_token %}

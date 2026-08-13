@@ -2,6 +2,12 @@
 {% block title %}Compare — ASTRAE{% endblock %}
 
 {% block content %}
+{% if partial_failure %}
+<div class="alert-warning mb-6">
+  Some platform data is temporarily unavailable. We found results from other providers.
+</div>
+{% endif %}
+
 <!-- Search header -->
 <div class="mb-8">
   <h1 class="text-2xl sm:text-3xl font-bold">Compare Platforms</h1>
@@ -117,7 +123,7 @@
           </div>
           {% endif %}
           <div class="mt-5 flex flex-wrap gap-2">
-            <a href="{% url 'book_offer' %}?platform={{ recommended.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ recommended.item_title|urlencode }}&final_price={{ recommended.final_price }}&original_price={{ recommended.original_price }}&cashback={{ recommended.cashback|default:0 }}"
+            <a href="{% url 'book_offer' %}?platform={{ recommended.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ recommended.item_title|urlencode }}&q1={{ q1|urlencode }}&q2={{ q2|urlencode }}"
                class="btn-primary !bg-white !text-indigo hover:!bg-slate-100 inline-flex items-center justify-center !h-11 !px-5">
               Book now
             </a>
@@ -172,7 +178,7 @@
         <span>{{ item.eta_mins|default:"—" }} min</span>
         <span>★ {{ item.rating }}</span>
         <span class="font-semibold text-indigo">{{ item.astrae_score|default:"—" }}</span>
-        <a href="{% url 'book_offer' %}?platform={{ item.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ item.item_title|urlencode }}&final_price={{ item.final_price }}"
+        <a href="{% url 'book_offer' %}?platform={{ item.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ item.item_title|urlencode }}&q1={{ q1|urlencode }}&q2={{ q2|urlencode }}"
            class="btn-primary !h-8 !text-xs !px-3 inline-flex items-center">Select</a>
       </div>
       {% endfor %}
@@ -193,7 +199,7 @@
           <span>★ {{ item.rating }}</span>
           <span>{{ item.eta_mins }} min</span>
         </div>
-        <a href="{% url 'book_offer' %}?platform={{ item.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ item.item_title|urlencode }}&final_price={{ item.final_price }}"
+        <a href="{% url 'book_offer' %}?platform={{ item.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ item.item_title|urlencode }}&q1={{ q1|urlencode }}&q2={{ q2|urlencode }}"
            class="btn-primary w-full !h-10 inline-flex items-center justify-center mt-4">Select</a>
       </div>
       {% endfor %}

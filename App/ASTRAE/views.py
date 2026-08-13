@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+from django.conf import settings
 
 def landingpage(request):
     return render(request, "landingpage.html")
@@ -29,6 +30,15 @@ def user_login(request):
 
             # Login the user
             login(request, user)
+
+            if not (user.is_staff or user.is_superuser):
+                try:
+                    from ASTRAEUser.services.daily_login_service import grant_daily_login_bonus
+                    bonus, granted = grant_daily_login_bonus(user)
+                    if granted:
+                        messages.success(request, f'Welcome back! +{bonus} daily login bonus earned.')
+                except Exception:
+                    pass
 
             if user.is_staff or user.is_superuser:
                 # Redirect to admin home if user is staff
@@ -76,10 +86,14 @@ def user_registration(request):
             first_name=first_name,
             last_name=last_name
         )
-        user.is_active = False  # Set is_active to False by default
-        user.save()
-
-        messages.success(request, "Registration successful! Please wait for admin approval.")
+        if getattr(settings, 'ASTRAE_DEMO_MODE', True):
+            user.is_active = True
+            user.save()
+            messages.success(request, "Registration successful! You can log in now.")
+        else:
+            user.is_active = False
+            user.save()
+            messages.success(request, "Registration successful! Please wait for admin approval.")
         return redirect('loginn')
 
     return render(request, 'registerpage.html')

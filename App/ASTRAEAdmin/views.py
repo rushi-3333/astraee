@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.http import require_POST
 from ASTRAEUser.services.admin_analytics_service import get_admin_dashboard_metrics
 
 
@@ -13,6 +14,7 @@ def adminhome(request):
     return render(request, "Admin/adminhome.html", context)
 
 @staff_member_required
+@require_POST
 def admin_update_userstatus(request, user_id):
     try:
         user = User.objects.get(id=user_id)

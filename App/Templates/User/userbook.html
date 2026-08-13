@@ -22,9 +22,8 @@
     <input type="hidden" name="platform" value="{{ platform }}">
     <input type="hidden" name="category" value="{{ category }}">
     <input type="hidden" name="item_title" value="{{ item_title }}">
-    <input type="hidden" name="final_price" value="{{ final_price }}">
-    <input type="hidden" name="original_price" value="{{ original_price }}">
-    <input type="hidden" name="cashback" value="{{ cashback }}">
+    <input type="hidden" name="q1" value="{{ q1 }}">
+    <input type="hidden" name="q2" value="{{ q2 }}">
 
     <!-- Offer card with integrated time selection -->
     <div class="astrae-card p-5 sm:p-6 mb-6" data-offer-card>
@@ -111,6 +110,21 @@
       </div>
       {% else %}
       <input type="hidden" name="quantity" value="1">
+      {% endif %}
+
+      {% if applicable_coupons %}
+      <div>
+        <label for="coupon_id" class="text-xs font-medium text-muted">Apply a coupon (optional)</label>
+        <select id="coupon_id" name="coupon_id" class="astrae-input !h-11 mt-1 w-full">
+          <option value="">— No coupon —</option>
+          {% for c in applicable_coupons %}
+          <option value="{{ c.id }}" {% if form_data.coupon_id == c.id|stringformat:"s" %}selected{% endif %}>
+            {{ c.coupon_code }} · {{ c.discount_text }}{% if c.face_value %} (₹{{ c.face_value }} off){% endif %}
+          </option>
+          {% endfor %}
+        </select>
+        <p class="text-xs text-muted mt-1">Only unused coupons for {{ platform }} are shown. Applied coupons are marked redeemed.</p>
+      </div>
       {% endif %}
 
       <div>
