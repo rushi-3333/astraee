@@ -26,17 +26,10 @@
 
 <!-- Tabs -->
 <div class="mt-6">
-  <div role="tablist" class="inline-flex h-9 items-center justify-center rounded-lg bg-muted-tab p-1 text-muted-foreground" style="background:#f1efe9;">
-    <button type="button" id="tab-btn-mine" onclick="showCouponTab('mine')"
-            class="coupon-tab-btn inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium transition-all"
-            aria-selected="true">
-      My Coupons
-    </button>
-    <button type="button" id="tab-btn-market" onclick="showCouponTab('market')"
-            class="coupon-tab-btn inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium transition-all"
-            aria-selected="false">
-      Marketplace
-    </button>
+  <div role="tablist" class="inline-flex h-9 items-center justify-center rounded-lg p-1 text-muted-foreground" style="background:#f1efe9;">
+    <button type="button" id="tab-btn-mine" onclick="showCouponTab('mine')" class="coupon-tab-btn inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium transition-all" aria-selected="true">My Coupons</button>
+    <button type="button" id="tab-btn-add" onclick="showCouponTab('add')" class="coupon-tab-btn inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium transition-all" aria-selected="false">Add Coupon</button>
+    <button type="button" id="tab-btn-market" onclick="showCouponTab('market')" class="coupon-tab-btn inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium transition-all" aria-selected="false">Marketplace</button>
   </div>
 
   <!-- My Coupons panel -->
@@ -58,17 +51,20 @@
             Listed for sale ({{ coupon.price_in_points }} PTS)
           </span>
         {% else %}
-          <form action="{% url 'sell_coupon' coupon.id %}" method="POST" class="mt-4 flex gap-2">
+          <form action="{% url 'sell_coupon' coupon.id %}" method="POST" class="mt-4 space-y-2">
             {% csrf_token %}
-            <input type="number" name="price_in_points" value="50" min="10" placeholder="PTS"
-                   class="h-9 w-20 rounded-lg border border-input bg-surface px-2 text-sm text-foreground
-                          focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-            <button type="submit"
-                    class="h-9 flex-1 rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/92">
-              Sell coupon
-            </button>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="number" name="price_in_points" value="50" min="10" placeholder="Price (PTS)"
+                     class="h-9 rounded-lg border border-input bg-surface px-2 text-sm">
+              <input type="number" name="face_value" value="500" min="50" placeholder="Face value ₹"
+                     class="h-9 rounded-lg border border-input bg-surface px-2 text-sm">
+            </div>
+            <input type="number" name="days_until_expiry" value="30" min="1" placeholder="Days until expiry"
+                   class="h-9 w-full rounded-lg border border-input bg-surface px-2 text-sm">
+            <button type="submit" class="h-9 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/92">Verify & List for sale</button>
           </form>
         {% endif %}
+        {% if coupon.is_demo %}<p class="mt-2 text-[0.625rem] text-warning">Demo coupon</p>{% endif %}
       </div>
       {% empty %}
       <p class="col-span-full py-10 text-center text-sm text-muted-foreground">
@@ -77,6 +73,47 @@
       {% endfor %}
     </div>
   </div>
+
+  <!-- Add coupon panel -->
+  {% if user.is_authenticated %}
+  <div id="tab-panel-add" class="mt-6 hidden">
+    <h2 class="mb-4 font-display text-base font-bold">Add & Verify Coupon (Demo)</h2>
+    <div class="max-w-lg rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <p class="mb-4 text-sm text-muted-foreground">Coupons are verified in demo mode (format, expiry, duplicates). Not validated against real platforms.</p>
+      <form action="{% url 'add_coupon' %}" method="POST" class="space-y-4">
+        {% csrf_token %}
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Platform</label>
+          <select name="platform" required class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm">
+            <option value="Amazon">Amazon</option><option value="Flipkart">Flipkart</option>
+            <option value="Swiggy">Swiggy</option><option value="Zomato">Zomato</option>
+            <option value="Uber">Uber</option><option value="Myntra">Myntra</option>
+            <option value="BigBasket">BigBasket</option><option value="Nykaa">Nykaa</option>
+          </select>
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Coupon code</label>
+          <input type="text" name="coupon_code" required placeholder="DEMO-MYCODE123" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm uppercase">
+        </div>
+        <div class="space-y-2">
+          <label class="text-sm font-medium">Discount description</label>
+          <input type="text" name="discount_text" value="Flat ₹100 off" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-2">
+            <label class="text-sm font-medium">Face value (₹)</label>
+            <input type="number" name="face_value" value="500" min="50" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm">
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium">Expires in (days)</label>
+            <input type="number" name="days_until_expiry" value="30" min="1" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm">
+          </div>
+        </div>
+        <button type="submit" class="h-10 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground">Add coupon</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Marketplace panel -->
   <div id="tab-panel-market" class="mt-6 hidden">
@@ -89,7 +126,8 @@
       {% for coupon in marketplace_coupons %}
       <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <span class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">{{ coupon.platform }} · Seller: {{ coupon.user.username }}</span>
-        <div class="mt-2 font-display text-xl font-bold tracking-wide text-primary">{{ coupon.coupon_code }}</div>
+        <div class="mt-2 font-display text-xl font-bold tracking-wide text-primary">{% if coupon.is_demo %}●●●●●●●●{% else %}{{ coupon.coupon_code }}{% endif %}</div>
+        <p class="mt-1 text-xs text-muted-foreground">Code revealed after purchase</p>
         <div class="mt-1 text-sm font-semibold text-success">{{ coupon.discount_text }}</div>
 
         <form action="{% url 'buy_coupon' coupon.id %}" method="POST" class="mt-4">
@@ -119,22 +157,14 @@
 {% block extra_scripts %}
 <script>
   function showCouponTab(tab) {
-    const mine = document.getElementById('tab-panel-mine');
-    const market = document.getElementById('tab-panel-market');
-    const btnMine = document.getElementById('tab-btn-mine');
-    const btnMarket = document.getElementById('tab-btn-market');
-
-    if (tab === 'mine') {
-      mine.classList.remove('hidden');
-      market.classList.add('hidden');
-      btnMine.setAttribute('aria-selected', 'true');
-      btnMarket.setAttribute('aria-selected', 'false');
-    } else {
-      market.classList.remove('hidden');
-      mine.classList.add('hidden');
-      btnMarket.setAttribute('aria-selected', 'true');
-      btnMine.setAttribute('aria-selected', 'false');
-    }
+    const panels = { mine: 'tab-panel-mine', add: 'tab-panel-add', market: 'tab-panel-market' };
+    const buttons = { mine: 'tab-btn-mine', add: 'tab-btn-add', market: 'tab-btn-market' };
+    Object.keys(panels).forEach(k => {
+      const el = document.getElementById(panels[k]);
+      if (el) el.classList.toggle('hidden', k !== tab);
+      const btn = document.getElementById(buttons[k]);
+      if (btn) btn.setAttribute('aria-selected', k === tab ? 'true' : 'false');
+    });
   }
 </script>
 {% endblock %}

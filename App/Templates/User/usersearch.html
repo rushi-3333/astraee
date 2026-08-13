@@ -7,40 +7,28 @@
 <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
   <div>
     <h1 class="font-display text-3xl font-bold">Unified Search</h1>
-    <p class="mt-1 text-muted-foreground">Compare every platform in one place — prices shown are after coupons.</p>
+    <p class="mt-1 text-muted-foreground">Compare every platform in one place — ASTRAE Score ranks best overall value.</p>
   </div>
+  <span class="self-start rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">Demo providers</span>
 </div>
 
+<!-- Unified smart search -->
+<form method="GET" action="{% url 'usersearch' %}" class="mt-4 flex gap-2">
+  <input type="text" name="q" value="{{ q }}" placeholder='Smart search: "Pizza near me", "Groceries under ₹1000"'
+         class="h-11 flex-1 rounded-xl border border-input bg-surface px-4 text-sm focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-primary/40">
+  <button type="submit" class="h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground">Search</button>
+</form>
+
 <!-- Category selector -->
-<div class="mt-6 -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
-  <a href="?category=ride" class="min-w-[13rem] shrink-0 sm:min-w-0">
-    <div class="h-full rounded-2xl border p-4 shadow-soft {% if active_category == 'ride' %}border-primary bg-primary/5 shadow-glow{% else %}border-border bg-card card-hover{% endif %}">
-      <span class="text-2xl">🚗</span>
-      <p class="mt-2 text-sm font-semibold">Ride Comparison</p>
-      <p class="text-xs text-muted-foreground">Cabs, autos & bikes</p>
+<div class="mt-6 -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+  {% for cat_slug, cat_label, cat_icon in categories_list %}
+  <a href="?category={{ cat_slug }}" class="min-w-[8rem] shrink-0">
+    <div class="h-full rounded-2xl border p-3 shadow-soft {% if active_category == cat_slug %}border-primary bg-primary/5{% else %}border-border bg-card card-hover{% endif %}">
+      <span class="text-xl">{{ cat_icon }}</span>
+      <p class="mt-1 text-xs font-semibold">{{ cat_label }}</p>
     </div>
   </a>
-  <a href="?category=food" class="min-w-[13rem] shrink-0 sm:min-w-0">
-    <div class="h-full rounded-2xl border p-4 shadow-soft {% if active_category == 'food' %}border-primary bg-primary/5 shadow-glow{% else %}border-border bg-card card-hover{% endif %}">
-      <span class="text-2xl">🍔</span>
-      <p class="mt-2 text-sm font-semibold">Food Delivery</p>
-      <p class="text-xs text-muted-foreground">Restaurants near you</p>
-    </div>
-  </a>
-  <a href="?category=shopping" class="min-w-[13rem] shrink-0 sm:min-w-0">
-    <div class="h-full rounded-2xl border p-4 shadow-soft {% if active_category == 'shopping' %}border-primary bg-primary/5 shadow-glow{% else %}border-border bg-card card-hover{% endif %}">
-      <span class="text-2xl">🛍️</span>
-      <p class="mt-2 text-sm font-semibold">Shopping</p>
-      <p class="text-xs text-muted-foreground">Electronics & fashion</p>
-    </div>
-  </a>
-  <a href="?category=medicine" class="min-w-[13rem] shrink-0 sm:min-w-0">
-    <div class="h-full rounded-2xl border p-4 shadow-soft {% if active_category == 'medicine' %}border-primary bg-primary/5 shadow-glow{% else %}border-border bg-card card-hover{% endif %}">
-      <span class="text-2xl">💊</span>
-      <p class="mt-2 text-sm font-semibold">Medicine Delivery</p>
-      <p class="text-xs text-muted-foreground">Pharmacy essentials</p>
-    </div>
-  </a>
+  {% endfor %}
 </div>
 
 <!-- Dynamic search form -->
@@ -107,6 +95,7 @@
       <select id="sort_by" name="sort_by"
               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground
                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40 lg:w-48">
+        <option value="best_value" {% if sort_by == 'best_value' %}selected{% endif %}>Best overall value</option>
         <option value="lowest_price" {% if sort_by == 'lowest_price' %}selected{% endif %}>Lowest price</option>
         <option value="fastest" {% if sort_by == 'fastest' %}selected{% endif %}>Fastest</option>
         <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Highest rating</option>
@@ -172,31 +161,57 @@
 
   <!-- Results -->
   <div>
+    {% if highlights %}
+    <div class="mb-4 flex flex-wrap gap-2">
+      {% if highlights.best_price %}<span class="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">Best price: {{ highlights.best_price }}</span>{% endif %}
+      {% if highlights.fastest %}<span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Fastest: {{ highlights.fastest }}</span>{% endif %}
+      {% if highlights.best_rated %}<span class="rounded-full bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">Best rated: {{ highlights.best_rated }}</span>{% endif %}
+      {% if highlights.best_overall %}<span class="rounded-full bg-foreground/10 px-3 py-1 text-xs font-semibold">Best value: {{ highlights.best_overall }}</span>{% endif %}
+    </div>
+    {% endif %}
+
     {% if recommended %}
     <div class="mb-5 flex flex-col gap-5 overflow-hidden rounded-2xl bg-gradient-brand p-6 text-white shadow-glow sm:flex-row sm:items-center sm:justify-between">
       <div class="min-w-0">
-        <span class="inline-block rounded-full bg-white/20 px-2.5 py-1 text-[0.6875rem] font-semibold">✦ ASTRAE Recommendation</span>
+        <span class="inline-block rounded-full bg-white/20 px-2.5 py-1 text-[0.6875rem] font-semibold">✦ ASTRAE Recommended</span>
         <h2 class="mt-2 font-display text-xl font-bold">{{ recommended.platform }}</h2>
-        <p class="mt-1 text-sm opacity-90">Final price ₹{{ recommended.final_price }} · Rated {{ recommended.rating }}★</p>
+        <p class="mt-1 text-sm opacity-90">₹{{ recommended.final_price }} · {{ recommended.rating }}★ · {{ recommended.estimated_delivery|default:"—" }}</p>
+        {% if recommended.score_reasons %}
+        <ul class="mt-2 space-y-0.5 text-xs opacity-90">
+          {% for reason in recommended.score_reasons %}<li>• {{ reason }}</li>{% endfor %}
+        </ul>
+        {% endif %}
 
-        <form action="{% url 'place_order' %}" method="POST" class="mt-4">
-          {% csrf_token %}
-          <input type="hidden" name="platform" value="{{ recommended.platform }}">
-          <input type="hidden" name="category" value="{{ active_category }}">
-          <input type="hidden" name="item_title" value="{{ recommended.item_title }}">
-          <input type="hidden" name="final_price" value="{{ recommended.final_price }}">
-          <button type="submit"
-                  class="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-white/90">
-            Book now
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-          </button>
-        </form>
+        <div class="mt-4 flex flex-wrap gap-2">
+          <form action="{% url 'place_order' %}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="platform" value="{{ recommended.platform }}">
+            <input type="hidden" name="category" value="{{ active_category }}">
+            <input type="hidden" name="item_title" value="{{ recommended.item_title }}">
+            <input type="hidden" name="final_price" value="{{ recommended.final_price }}">
+            <input type="hidden" name="original_price" value="{{ recommended.original_price }}">
+            <input type="hidden" name="discount" value="{{ recommended.discount|default:0 }}">
+            <input type="hidden" name="cashback" value="{{ recommended.cashback|default:0 }}">
+            <button type="submit" class="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-foreground shadow-sm hover:bg-white/90">Book now →</button>
+          </form>
+          {% if user.is_authenticated %}
+          <form action="{% url 'add_to_wishlist' %}" method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="title" value="{{ recommended.item_title }}">
+            <input type="hidden" name="platform" value="{{ recommended.platform }}">
+            <input type="hidden" name="category" value="{{ active_category }}">
+            <input type="hidden" name="current_price" value="{{ recommended.final_price }}">
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="inline-flex h-10 items-center rounded-lg border border-white/40 px-4 text-sm font-semibold text-white hover:bg-white/10">♡ Save</button>
+          </form>
+          {% endif %}
+        </div>
       </div>
 
       <div class="mx-auto grid size-24 shrink-0 place-items-center rounded-full border-4 border-white/70 text-center">
         <div>
-          <p class="font-display text-2xl font-bold leading-none">{{ recommended.savings_score|default:"100" }}</p>
-          <p class="mt-1 text-[0.5625rem] uppercase tracking-wide opacity-80">Savings score</p>
+          <p class="font-display text-2xl font-bold leading-none">{{ recommended.astrae_score|default:"—" }}</p>
+          <p class="mt-1 text-[0.5625rem] uppercase tracking-wide opacity-80">ASTRAE Score</p>
         </div>
       </div>
     </div>
@@ -209,22 +224,20 @@
       <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <div class="mb-3 flex items-center justify-between">
           <span class="font-semibold">{{ item.platform }}</span>
-          <span class="flex items-center gap-1 text-xs text-muted-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="text-warning"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>
-            {{ item.rating }}
-          </span>
+          <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{{ item.astrae_score|default:"—" }}/100</span>
         </div>
-
+        <p class="mb-2 text-xs text-muted-foreground">{{ item.item_title|truncatechars:35 }}</p>
         <div class="flex items-baseline gap-2">
           <span class="font-display text-2xl font-bold">₹{{ item.final_price }}</span>
           {% if item.original_price > item.final_price %}
             <span class="text-sm text-muted-foreground line-through">₹{{ item.original_price }}</span>
           {% endif %}
         </div>
-
-        {% if item.coupon_discount > 0 %}
-          <span class="mt-2 inline-block rounded-md bg-success/10 px-2 py-1 text-xs font-semibold text-success">₹{{ item.coupon_discount }} OFF</span>
-        {% endif %}
+        <div class="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span>★ {{ item.rating }}</span>
+          <span>{{ item.estimated_delivery|default:"—" }}</span>
+          {% if item.cashback %}<span class="text-success">₹{{ item.cashback }} CB</span>{% endif %}
+        </div>
 
         <form action="{% url 'place_order' %}" method="POST" class="mt-4">
           {% csrf_token %}
@@ -232,11 +245,23 @@
           <input type="hidden" name="category" value="{{ active_category }}">
           <input type="hidden" name="item_title" value="{{ item.item_title }}">
           <input type="hidden" name="final_price" value="{{ item.final_price }}">
-          <button type="submit"
-                  class="h-10 w-full rounded-lg bg-secondary text-sm font-semibold text-secondary-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
+          <input type="hidden" name="original_price" value="{{ item.original_price }}">
+          <button type="submit" class="h-10 w-full rounded-lg bg-secondary text-sm font-semibold text-secondary-foreground hover:bg-primary hover:text-primary-foreground">
             Select {{ item.platform }} →
           </button>
         </form>
+        {% if user.is_authenticated %}
+        <form action="{% url 'add_to_wishlist' %}" method="POST" class="mt-2">
+          {% csrf_token %}
+          <input type="hidden" name="title" value="{{ item.item_title }}">
+          <input type="hidden" name="platform" value="{{ item.platform }}">
+          <input type="hidden" name="category" value="{{ active_category }}">
+          <input type="hidden" name="current_price" value="{{ item.final_price }}">
+          <input type="hidden" name="item_type" value="product">
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="h-8 w-full rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:bg-secondary">♡ Add to wishlist</button>
+        </form>
+        {% endif %}
       </div>
       {% empty %}
       <p class="col-span-full py-10 text-center text-sm text-muted-foreground">

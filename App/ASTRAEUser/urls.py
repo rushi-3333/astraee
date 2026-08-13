@@ -1,15 +1,43 @@
 from django.urls import path
-from ASTRAEUser.views import userhome, usercoupons, usersearch, userprofile, userrewards, place_order, sell_coupon, buy_coupon, update_profile
+from ASTRAEUser import views
 
 urlpatterns = [
-    path('userhome/', userhome, name='userhome'),
-    path('usersearch/', usersearch, name='usersearch'),
-    path('usercoupons/', usercoupons, name='usercoupons'),
-    path('userrewards/', userrewards, name='userrewards'),
-    path('userprofile/', userprofile, name='userprofile'),
-    path('update_profile/', update_profile, name='update_profile'),
-    path('place_order/', place_order, name='place_order'),
-    path('sell_coupon/<int:coupon_id>/', sell_coupon, name='sell_coupon'),
-    path('buy_coupon/<int:coupon_id>/', buy_coupon, name='buy_coupon'),
+    # Home & Search
+    path('userhome/', views.userhome, name='userhome'),
+    path('usersearch/', views.usersearch, name='usersearch'),
+    path('userdeals/', views.userdeals, name='userdeals'),
 
+    # Orders & Booking
+    path('userorders/', views.userorders, name='userorders'),
+    path('place_order/', views.place_order, name='place_order'),
+
+    # Coupons & Marketplace
+    path('usercoupons/', views.usercoupons, name='usercoupons'),
+    path('sell_coupon/<int:coupon_id>/', views.sell_coupon, name='sell_coupon'),
+    path('buy_coupon/<int:coupon_id>/', views.buy_coupon, name='buy_coupon'),
+    path('add_coupon/', views.add_coupon, name='add_coupon'),
+
+    # Rewards & Wallet
+    path('userrewards/', views.userrewards, name='userrewards'),
+    path('usersavings/', views.usersavings, name='usersavings'),
+
+    # Wishlist & Alerts
+    path('userwishlist/', views.userwishlist, name='userwishlist'),
+    path('add_to_wishlist/', views.add_to_wishlist, name='add_to_wishlist'),
+    path('remove_from_wishlist/<int:item_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
+    path('useralerts/', views.useralerts, name='useralerts'),
+    path('create_price_alert/', views.create_price_alert, name='create_price_alert'),
+
+    # Notifications
+    path('usernotifications/', views.usernotifications, name='usernotifications'),
+    path('mark_notifications_read/', views.mark_notifications_read, name='mark_notifications_read'),
+
+    # Profile
+    path('userprofile/', views.userprofile, name='userprofile'),
+    path('update_profile/', views.update_profile, name='update_profile'),
+
+    # JSON APIs
+    path('api/search/', views.api_search, name='api_search'),
+    path('api/deals/', views.api_deals, name='api_deals'),
+    path('api/coupon-price/', views.api_coupon_price_suggestion, name='api_coupon_price'),
 ]

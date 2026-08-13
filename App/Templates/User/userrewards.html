@@ -7,6 +7,28 @@
 <h1 class="font-display text-3xl font-bold">Rewards Dashboard</h1>
 <p class="mt-1 text-muted-foreground">Track your cashback points, lucky order drops (1 – 10,000 PTS), and marketplace transactions.</p>
 
+<!-- Wallet summary -->
+{% if wallet %}
+<div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <div class="rounded-2xl border border-border bg-card p-4 shadow-soft">
+    <p class="text-xs text-muted-foreground">Available points</p>
+    <p class="font-display text-xl font-bold text-primary">⚡ {{ wallet.reward_points|default:total_points }}</p>
+  </div>
+  <div class="rounded-2xl border border-border bg-card p-4 shadow-soft">
+    <p class="text-xs text-muted-foreground">Pending</p>
+    <p class="font-display text-xl font-bold">{{ pending_points|default:0 }}</p>
+  </div>
+  <div class="rounded-2xl border border-border bg-card p-4 shadow-soft">
+    <p class="text-xs text-muted-foreground">Redeemed</p>
+    <p class="font-display text-xl font-bold">{{ redeemed_points|default:0 }}</p>
+  </div>
+  <div class="rounded-2xl border border-border bg-card p-4 shadow-soft">
+    <p class="text-xs text-muted-foreground">Marketplace earnings</p>
+    <p class="font-display text-xl font-bold text-success">{{ wallet.marketplace_earnings|default:0 }} PTS</p>
+  </div>
+</div>
+{% endif %}
+
 <!-- Stats -->
 <div class="mt-6 grid gap-4 sm:grid-cols-2">
   <div class="overflow-hidden rounded-2xl bg-gradient-brand p-6 text-white shadow-glow">

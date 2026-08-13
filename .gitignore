@@ -1,5 +1,26 @@
+# Virtual environments
+venv/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment secrets
+.env
+
 # Large ML/model files
 App/Model/embeddings_model/
 
 # ChromaDB generated database
 App/Model/chroma_db/
+
+# Local database (development)
+App/db.sqlite3
+
+# Collected static files
+App/staticfiles/
+
+# Media uploads
+App/media/

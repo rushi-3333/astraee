@@ -27,6 +27,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
+LOGIN_URL = '/loginn/'
+LOGIN_REDIRECT_URL = '/ASTRAEUser/userhome/'
+
+# Demo mode — simulated external data clearly labeled
+ASTRAE_DEMO_MODE = True
 
 # Application definition
 
@@ -128,8 +133,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

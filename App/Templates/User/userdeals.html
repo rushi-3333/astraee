@@ -1,0 +1,97 @@
+{% extends 'User/base_user.html' %}
+
+{% block title %}Deals — ASTRAE{% endblock %}
+
+{% block content %}
+
+<div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+  <div>
+    <h1 class="font-display text-3xl font-bold">Deals Hub</h1>
+    <p class="mt-1 text-muted-foreground">Centralized deals across all platforms — sorted by ASTRAE Deal Score.</p>
+  </div>
+  <span class="inline-flex items-center gap-1.5 self-start rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">
+    Demo data — simulated offers
+  </span>
+</div>
+
+<!-- Filters -->
+<form method="GET" class="mt-6 rounded-2xl border border-border bg-card p-5 shadow-soft">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+    <div class="space-y-2">
+      <label for="category" class="text-sm font-medium">Category</label>
+      <select id="category" name="category"
+              class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-primary/40">
+        <option value="">All categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat.slug }}" {% if active_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="space-y-2">
+      <label for="platform" class="text-sm font-medium">Platform</label>
+      <select id="platform" name="platform"
+              class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-primary/40">
+        <option value="">All platforms</option>
+        {% for p in platforms %}
+        <option value="{{ p.name }}" {% if active_platform == p.name %}selected{% endif %}>{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="space-y-2">
+      <label for="sort_by" class="text-sm font-medium">Sort by</label>
+      <select id="sort_by" name="sort_by"
+              class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-primary/40">
+        <option value="best_deal" {% if sort_by == 'best_deal' %}selected{% endif %}>Best Deal</option>
+        <option value="highest_discount" {% if sort_by == 'highest_discount' %}selected{% endif %}>Highest Discount</option>
+        <option value="lowest_price" {% if sort_by == 'lowest_price' %}selected{% endif %}>Lowest Price</option>
+        <option value="highest_cashback" {% if sort_by == 'highest_cashback' %}selected{% endif %}>Highest Cashback</option>
+        <option value="ending_soon" {% if sort_by == 'ending_soon' %}selected{% endif %}>Ending Soon</option>
+      </select>
+    </div>
+    <button type="submit"
+            class="h-10 rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/92">
+      Apply filters
+    </button>
+  </div>
+</form>
+
+<!-- Deals grid -->
+<div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  {% for deal in deals %}
+  <div class="card-hover rounded-2xl border border-border bg-card p-5 shadow-soft">
+    <div class="flex items-start justify-between gap-2">
+      <span class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">{{ deal.platform_name }}</span>
+      <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">Score {{ deal.deal_score }}</span>
+    </div>
+    <h3 class="mt-2 font-semibold leading-snug">{{ deal.title }}</h3>
+    <p class="mt-1 line-clamp-2 text-xs text-muted-foreground">{{ deal.description|default:"Limited time offer" }}</p>
+
+    <div class="mt-4 flex items-baseline gap-2">
+      <span class="font-display text-2xl font-bold">₹{{ deal.final_price }}</span>
+      {% if deal.original_price > deal.final_price %}
+      <span class="text-sm text-muted-foreground line-through">₹{{ deal.original_price }}</span>
+      <span class="rounded-md bg-success/10 px-1.5 py-0.5 text-xs font-semibold text-success">{{ deal.discount_percent }}% off</span>
+      {% endif %}
+    </div>
+
+    <div class="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+      {% if deal.cashback > 0 %}<span>₹{{ deal.cashback }} cashback</span>{% endif %}
+      <span>★ {{ deal.rating }}</span>
+      {% if deal.expires_at %}<span>Ends {{ deal.expires_at|date:"M d" }}</span>{% endif %}
+      {% if deal.is_demo %}<span class="text-warning">Demo</span>{% endif %}
+    </div>
+
+    <a href="{% url 'usersearch' %}?category={{ deal.category }}&q2={{ deal.title|urlencode }}"
+       class="mt-4 inline-flex h-9 w-full items-center justify-center rounded-lg bg-secondary text-sm font-semibold text-secondary-foreground transition-colors hover:bg-primary hover:text-primary-foreground">
+      Compare prices →
+    </a>
+  </div>
+  {% empty %}
+  <div class="col-span-full rounded-2xl border border-dashed border-border bg-card py-16 text-center">
+    <p class="text-lg font-semibold">No deals found</p>
+    <p class="mt-2 text-sm text-muted-foreground">Try adjusting filters or run <code class="rounded bg-secondary px-1.5 py-0.5 text-xs">python manage.py seed_deals</code> to populate demo deals.</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

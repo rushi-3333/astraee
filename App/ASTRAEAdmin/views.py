@@ -46,6 +46,7 @@ def adminhome(request):
     }
     return render(request, "Admin/adminhome.html", context)
 
+@staff_member_required
 def admin_update_userstatus(request, user_id):
     try:
         user = User.objects.get(id=user_id)
