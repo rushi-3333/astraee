@@ -1,15 +1,24 @@
 {% extends 'User/base_user.html' %}
 {% block title %}Price Alerts — ASTRAE{% endblock %}
 {% block content %}
-<div class="mb-8"><h1 class="text-2xl font-bold">Price Alerts</h1><p class="text-muted mt-1">Get notified when prices drop below your target.</p></div>
+<div class="mb-8">
+  <h1 class="text-2xl font-bold">Price & Offer Alerts</h1>
+  <p class="text-muted mt-1">Get notified for price drops, deal expiry, coupons, and events (demo mode).</p>
+</div>
 
 <div class="astrae-card p-6 mb-8 max-w-2xl">
   <h2 class="font-bold mb-4">Create alert</h2>
   <form action="{% url 'create_price_alert' %}" method="POST" class="grid gap-3 sm:grid-cols-2">
     {% csrf_token %}
-    <input type="text" name="title" placeholder="Product name" class="astrae-input sm:col-span-2" required>
-    <input type="text" name="platform" placeholder="Platform" class="astrae-input">
-    <input type="number" name="target_price" placeholder="Target price ₹" class="astrae-input" required>
+    <input type="text" name="title" placeholder="Product or offer name" class="astrae-input sm:col-span-2" required>
+    <select name="alert_type" class="astrae-input">
+      {% for code, label in alert_types %}
+      <option value="{{ code }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="platform" placeholder="Platform (optional)" class="astrae-input">
+    <input type="number" name="current_price" placeholder="Current price ₹" class="astrae-input" step="0.01">
+    <input type="number" name="target_price" placeholder="Target / alert price ₹" class="astrae-input" required step="0.01">
     <input type="hidden" name="category" value="shopping">
     <button type="submit" class="btn-primary sm:col-span-2">Create alert</button>
   </form>
@@ -17,16 +26,35 @@
 
 <div class="space-y-4">
   {% for alert in alerts %}
-  <div class="astrae-card p-5 flex flex-wrap justify-between gap-3">
-    <div>
-      <h3 class="font-bold">{{ alert.title }}</h3>
-      <p class="text-sm text-muted">{{ alert.platform|default:"Any platform" }}</p>
-      <p class="mt-2 text-sm">Target: <strong>₹{{ alert.target_price }}</strong> · Current: ₹{{ alert.current_price }}</p>
+  <div class="astrae-card p-5">
+    <div class="flex flex-wrap justify-between gap-3">
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <h3 class="font-bold">{{ alert.title }}</h3>
+          <span class="badge bg-slate-100 text-muted text-xs">{{ alert.get_alert_type_display }}</span>
+        </div>
+        <p class="text-sm text-muted mt-1">{{ alert.platform|default:"Any platform" }}</p>
+        {% if alert.alert_type == 'price_drop' %}
+        <p class="mt-2 text-sm">Current: <strong>₹{{ alert.current_price }}</strong> · Target: <strong>₹{{ alert.target_price }}</strong></p>
+        {% endif %}
+        {% if alert.status == 'price_dropped' %}
+        <p class="mt-2 text-sm font-semibold text-success">{{ alert.alert_message }}</p>
+        {% endif %}
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        <span class="badge {% if alert.status == 'price_dropped' %}badge-success{% elif alert.status == 'watching' %}badge-indigo{% else %}badge-warning{% endif %}">{{ alert.get_status_display }}</span>
+        <form action="{% url 'delete_price_alert' alert.id %}" method="POST">{% csrf_token %}
+          <button type="submit" class="text-xs text-destructive hover:underline">Remove</button>
+        </form>
+      </div>
     </div>
-    <span class="badge {% if alert.status == 'price_dropped' %}badge-success{% elif alert.status == 'watching' %}badge-indigo{% else %}badge-warning{% endif %}">{{ alert.get_status_display }}</span>
   </div>
   {% empty %}
-  <div class="empty-state"><div class="empty-state-icon">📉</div><p class="font-semibold">No price alerts</p><p class="text-sm text-muted mt-1">Set a target and we'll notify you in demo mode.</p></div>
+  <div class="empty-state">
+    <div class="empty-state-icon">📉</div>
+    <p class="font-semibold">No alerts yet</p>
+    <p class="text-sm text-muted mt-1">Watch a product and set a target price, or create an offer alert above.</p>
+  </div>
   {% endfor %}
 </div>
 {% endblock %}

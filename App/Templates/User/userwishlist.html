@@ -1,27 +1,48 @@
 {% extends 'User/base_user.html' %}
-{% block title %}Wishlist — ASTRAE{% endblock %}
+{% block title %}Watchlist — ASTRAE{% endblock %}
 {% block content %}
-<div class="mb-8"><h1 class="text-2xl font-bold">Wishlist</h1><p class="text-muted mt-1">Saved items with price tracking.</p></div>
+<div class="mb-8">
+  <h1 class="text-2xl font-bold">My Watchlist</h1>
+  <p class="text-muted mt-1">Saved products, services, deals & coupons with price tracking.</p>
+</div>
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
   {% for item in wishlist_items %}
-  <div class="astrae-card p-5">
-    <span class="badge bg-slate-100 text-muted">{{ item.item_type }}</span>
-    <h3 class="mt-2 font-bold">{{ item.title }}</h3>
-    <p class="text-xs text-muted">{{ item.platform }}</p>
-    <div class="mt-4 space-y-1 text-sm">
-      <div class="flex justify-between"><span class="text-muted">Current</span><span class="font-bold">₹{{ item.current_price }}</span></div>
-      <div class="flex justify-between"><span class="text-muted">Lowest</span><span class="text-success font-semibold">₹{{ item.lowest_price }}</span></div>
+  <div class="astrae-card p-5 flex flex-col">
+    <div class="flex justify-between items-start gap-2">
+      <span class="badge bg-slate-100 text-muted capitalize">{{ item.item_type }}</span>
+      {% if item.active_alert %}
+      <span class="badge badge-success text-xs">Alert active</span>
+      {% endif %}
     </div>
-    <div class="mt-4 flex gap-2">
-      <a href="{% url 'usersearch' %}?category={{ item.category|default:'shopping' }}&q2={{ item.title|urlencode }}" class="btn-primary flex-1 !h-9 !text-xs justify-center">Compare</a>
-      <form action="{% url 'remove_from_wishlist' item.id %}" method="POST">{% csrf_token %}<button type="submit" class="btn-ghost !text-destructive">Remove</button></form>
+    <h3 class="mt-2 font-bold">{{ item.title }}</h3>
+    <p class="text-xs text-muted">{{ item.platform|default:"Any platform" }}</p>
+    <div class="mt-4 space-y-1 text-sm flex-1">
+      <div class="flex justify-between"><span class="text-muted">Current</span><span class="font-bold">₹{{ item.current_price }}</span></div>
+      <div class="flex justify-between"><span class="text-muted">Lowest seen</span><span class="text-success font-semibold">₹{{ item.lowest_price }}</span></div>
+      {% if item.potential_savings %}
+      <div class="flex justify-between"><span class="text-muted">Potential save</span><span class="text-indigo font-semibold">₹{{ item.potential_savings }}</span></div>
+      {% endif %}
+      {% if item.active_alert %}
+      <p class="text-xs text-muted pt-1">Target alert: ₹{{ item.active_alert.target_price }}</p>
+      {% endif %}
+    </div>
+    <div class="mt-4 flex flex-col gap-2">
+      <a href="{% url 'usersearch' %}?category={{ item.category|default:'shopping' }}&q2={{ item.title|urlencode }}" class="btn-primary w-full !h-9 !text-xs justify-center">Compare prices</a>
+      {% if not item.active_alert %}
+      <form action="{% url 'wishlist_create_alert' item.id %}" method="POST" class="flex gap-2">
+        {% csrf_token %}
+        <input type="number" name="target_price" placeholder="Alert ₹" class="astrae-input !h-9 flex-1 !text-xs" step="0.01">
+        <button type="submit" class="btn-secondary !h-9 !text-xs shrink-0">Set alert</button>
+      </form>
+      {% endif %}
+      <form action="{% url 'remove_from_wishlist' item.id %}" method="POST">{% csrf_token %}<button type="submit" class="btn-ghost !text-destructive !text-xs w-full">Remove</button></form>
     </div>
   </div>
   {% empty %}
   <div class="col-span-full empty-state">
     <div class="empty-state-icon">♡</div>
-    <p class="font-semibold">No saved items</p>
-    <p class="mt-1 text-sm text-muted">Save products from comparison results.</p>
+    <p class="font-semibold">Nothing on your watchlist yet</p>
+    <p class="mt-1 text-sm text-muted">Save items from comparison results to track prices.</p>
     <a href="{% url 'usersearch' %}" class="btn-primary mt-4 inline-flex">Browse & compare</a>
   </div>
   {% endfor %}

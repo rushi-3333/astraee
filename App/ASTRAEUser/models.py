@@ -124,6 +124,29 @@ class UserCoupon(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.coupon_code} ({self.platform})"
 
+    @property
+    def days_until_expiry(self):
+        if not self.expiry_date:
+            return None
+        return (self.expiry_date - timezone.localdate()).days
+
+    @property
+    def expiry_label(self):
+        days = self.days_until_expiry
+        if days is None:
+            return 'No expiry set'
+        if days < 0:
+            return 'Expired'
+        if days == 0:
+            return 'Expires today'
+        if days == 1:
+            return 'Expires in 1 day'
+        return f'Expires in {days} days'
+
+    @property
+    def is_verified_coupon(self):
+        return self.status in ('verified', 'listed', 'sold') and not self.is_used
+
 
 # ─── Platform & Category management ─────────────────────────────────────────
 
@@ -215,6 +238,13 @@ class PlatformEvent(models.Model):
     main_benefit = models.CharField(max_length=150, help_text='Primary discount or benefit headline')
     starts_at = models.DateTimeField()
     ends_at = models.DateTimeField()
+    event_type = models.CharField(max_length=30, default='live_offer', choices=[
+        ('festival', 'Festival Sale'),
+        ('flash_sale', 'Flash Sale'),
+        ('live_offer', 'Live Offer'),
+        ('platform_offer', 'Platform Offer'),
+        ('upcoming', 'Upcoming Event'),
+    ])
     is_active = models.BooleanField(default=True)
     is_demo = models.BooleanField(default=True, help_text='Sample event for demo/presentation')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -243,6 +273,10 @@ class PlatformEvent(models.Model):
         if days_left <= 3:
             return 'ending_soon'
         return 'live'
+
+    @property
+    def event_type_label(self):
+        return dict(self._meta.get_field('event_type').choices).get(self.event_type, self.event_type)
 
 
 # ─── Wallet ─────────────────────────────────────────────────────────────────
@@ -347,20 +381,33 @@ class WishlistItem(models.Model):
 
 
 class PriceAlert(models.Model):
+    ALERT_TYPES = [
+        ('price_drop', 'Price Drop'),
+        ('coupon_expiry', 'Coupon Expiry'),
+        ('deal_expiry', 'Deal Expiry'),
+        ('new_offer', 'New Offer'),
+        ('event_start', 'Event Starting'),
+    ]
     STATUS_CHOICES = [
         ('watching', 'Watching'),
         ('price_dropped', 'Price Dropped'),
         ('offer_available', 'Offer Available'),
         ('expired', 'Expired'),
+        ('triggered', 'Triggered'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='price_alerts')
+    alert_type = models.CharField(max_length=20, choices=ALERT_TYPES, default='price_drop')
     title = models.CharField(max_length=255)
     platform = models.CharField(max_length=100, blank=True, default='')
     category = models.CharField(max_length=50, blank=True, default='')
     target_price = models.DecimalField(max_digits=10, decimal_places=2)
     current_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='watching')
+    wishlist_item = models.ForeignKey(
+        'WishlistItem', on_delete=models.SET_NULL, null=True, blank=True, related_name='alerts',
+    )
+    reference_id = models.CharField(max_length=100, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -368,10 +415,29 @@ class PriceAlert(models.Model):
         indexes = [
             models.Index(fields=['user', 'status']),
             models.Index(fields=['target_price']),
+            models.Index(fields=['alert_type']),
         ]
 
     def __str__(self):
         return f"{self.title} @ ₹{self.target_price}"
+
+    @property
+    def potential_savings(self):
+        if self.current_price and self.target_price and self.current_price > self.target_price:
+            return self.current_price - self.target_price
+        return 0
+
+    @property
+    def alert_message(self):
+        if self.status == 'price_dropped' and self.potential_savings:
+            return f"Price Drop Alert! You can now save ₹{self.potential_savings:.0f}."
+        if self.alert_type == 'coupon_expiry':
+            return 'Coupon expiry reminder — use or sell before it expires.'
+        if self.alert_type == 'deal_expiry':
+            return 'Deal ending soon — compare prices before it expires.'
+        if self.alert_type == 'event_start':
+            return 'Event starting soon — check offers now.'
+        return f'Watching for target price ₹{self.target_price}'
 
 
 # ─── Notifications ───────────────────────────────────────────────────────────

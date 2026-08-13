@@ -8,33 +8,37 @@
 </div>
 
 <!-- Stats -->
-<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 mb-10">
   <div class="astrae-card p-5 border-l-4 border-l-indigo">
-    <p class="text-xs font-medium text-muted uppercase">Total Points</p>
-    <p class="mt-2 text-3xl font-bold text-indigo">⚡ {{ total_points }}</p>
+    <p class="text-xs font-medium text-muted uppercase">Available</p>
+    <p class="mt-2 text-3xl font-bold text-indigo">⚡ {{ available_points|default:total_points }}</p>
   </div>
   <div class="astrae-card p-5">
-    <p class="text-xs font-medium text-muted uppercase">Available</p>
-    <p class="mt-2 text-3xl font-bold">{{ wallet.reward_points|default:total_points }}</p>
+    <p class="text-xs font-medium text-muted uppercase">Lifetime earned</p>
+    <p class="mt-2 text-3xl font-bold">{{ lifetime_points|default:0 }}</p>
+  </div>
+  <div class="astrae-card p-5">
+    <p class="text-xs font-medium text-muted uppercase">Used</p>
+    <p class="mt-2 text-3xl font-bold text-muted">{{ redeemed_points|default:0 }}</p>
   </div>
   <div class="astrae-card p-5">
     <p class="text-xs font-medium text-muted uppercase">Pending</p>
     <p class="mt-2 text-3xl font-bold text-warning">{{ pending_points|default:0 }}</p>
   </div>
   <div class="astrae-card p-5">
-    <p class="text-xs font-medium text-muted uppercase">Redeemed</p>
-    <p class="mt-2 text-3xl font-bold text-muted">{{ redeemed_points|default:0 }}</p>
+    <p class="text-xs font-medium text-muted uppercase">Order savings</p>
+    <p class="mt-2 text-3xl font-bold text-success">₹{{ total_savings|floatformat:0|default:"0" }}</p>
   </div>
 </div>
 
 <!-- Ways to earn -->
 <div class="astrae-card p-6 mb-10">
-  <h2 class="font-bold mb-4">Ways to earn more</h2>
+  <h2 class="font-bold mb-4">Ways to earn (configurable rules)</h2>
   <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Complete orders</strong><p class="text-muted mt-1">+20 pts per booking</p></div>
-    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Sell coupons</strong><p class="text-muted mt-1">+15 pts bonus</p></div>
-    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Daily activity</strong><p class="text-muted mt-1">+5 pts login</p></div>
-    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Referrals</strong><p class="text-muted mt-1">+50 pts</p></div>
+    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Complete orders</strong><p class="text-muted mt-1">+{{ rules.order_completed|default:20 }} pts</p></div>
+    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Sell coupons</strong><p class="text-muted mt-1">+{{ rules.coupon_sold|default:15 }} pts bonus</p></div>
+    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Daily login</strong><p class="text-muted mt-1">+{{ rules.daily_login|default:5 }} pts</p></div>
+    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Referrals</strong><p class="text-muted mt-1">+{{ rules.referral|default:50 }} pts</p></div>
   </div>
 </div>
 

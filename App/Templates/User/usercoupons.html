@@ -127,7 +127,8 @@
       {% else %}
       <span class="badge badge-success mt-3">Active</span>
       {% endif %}
-      {% if coupon.expiry_date %}<p class="mt-2 text-xs text-muted">Expires {{ coupon.expiry_date|date:"M d, Y" }}</p>{% endif %}
+        {% if coupon.expiry_date %}<p class="mt-2 text-xs {% if coupon.days_until_expiry <= 3 %}text-warning font-semibold{% else %}text-muted{% endif %}">{{ coupon.expiry_label }}</p>{% endif %}
+        {% if coupon.is_verified_coupon and not coupon.is_for_sale %}<span class="badge badge-success mt-2">✓ Verified Coupon</span>{% endif %}
     </div>
     {% empty %}
     <div class="col-span-full empty-state">

@@ -6,6 +6,8 @@ from django.utils import timezone
 from ASTRAEUser.models import PlatformEvent, Platform
 
 
+EVENT_TYPES = ['festival', 'flash_sale', 'live_offer', 'platform_offer', 'upcoming']
+
 EVENT_TEMPLATES = [
     ('Amazon', 'shopping', 'Great Indian Festival', 'Up to 70% off on electronics & fashion', 'Annual mega sale with bank offers and no-cost EMI.'),
     ('Amazon', 'shopping', 'Prime Day Preview', 'Exclusive early deals for members', 'Prime members get 24-hour early access to top deals.'),
@@ -25,6 +27,9 @@ EVENT_TEMPLATES = [
     ('Zomato', 'food', 'Pizza Party Weekend', 'Buy 1 Get 1 on pizzas', 'Domino\'s, Pizza Hut, and local favorites.'),
     ('Nykaa', 'beauty', 'Pink Friday Sale', 'Up to 50% off beauty', 'Skincare, makeup, and fragrance from top brands.'),
     ('Nykaa', 'beauty', 'Summer Glow Fest', 'Free gifts on ₹999+', 'Sunscreen, serums, and summer essentials.'),
+    ('Netmeds', 'medicine', 'Health Days Sale', 'Up to 25% off medicines', 'Prescription and OTC medicines at discounted prices.'),
+    ('PharmEasy', 'medicine', 'Flash Medicine Sale', 'Extra 20% off + free delivery', 'Quick medicine delivery flash offer.'),
+    ('Apollo Pharmacy', 'medicine', 'Wellness Weekend', 'Buy 2 Get 1 on vitamins', 'Immunity boosters and daily wellness products.'),
     ('Uber', 'ride', 'City Commute Week', 'Flat ₹50 off on 5 rides', 'Save on daily office and metro-connect rides.'),
     ('Ola', 'ride', 'Weekend Outstation Offer', '15% off on outstation trips', 'Plan your weekend getaway with discounted cab fares.'),
 ]
@@ -67,6 +72,7 @@ class Command(BaseCommand):
                 title=title,
                 description=f'[DEMO] {desc} Simulated offer for ASTRAE presentation — not a live external promotion.',
                 main_benefit=benefit,
+                event_type=EVENT_TYPES[i % len(EVENT_TYPES)],
                 starts_at=starts,
                 ends_at=ends,
                 is_active=True,

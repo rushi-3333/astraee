@@ -31,6 +31,8 @@ urlpatterns = [
     path('remove_from_wishlist/<int:item_id>/', views.remove_from_wishlist, name='remove_from_wishlist'),
     path('useralerts/', views.useralerts, name='useralerts'),
     path('create_price_alert/', views.create_price_alert, name='create_price_alert'),
+    path('delete_price_alert/<int:alert_id>/', views.delete_price_alert, name='delete_price_alert'),
+    path('wishlist/<int:item_id>/alert/', views.wishlist_create_alert, name='wishlist_create_alert'),
 
     # Notifications
     path('usernotifications/', views.usernotifications, name='usernotifications'),

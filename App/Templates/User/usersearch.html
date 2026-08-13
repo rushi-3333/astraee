@@ -107,11 +107,14 @@
             {% if recommended.cashback %}<span class="text-cyan-light">₹{{ recommended.cashback }} cashback</span>{% endif %}
           </div>
           {% if recommended.score_reasons %}
-          <ul class="mt-4 space-y-1 text-sm text-slate-300">
-            {% for reason in recommended.score_reasons %}
-            <li>✓ {{ reason }}</li>
-            {% endfor %}
-          </ul>
+          <div class="mt-4 rounded-xl bg-white/10 p-4">
+            <p class="text-sm font-bold text-white mb-2">Why ASTRAE recommends this</p>
+            <ul class="space-y-1.5 text-sm text-slate-200">
+              {% for reason in recommended.score_reasons %}
+              <li class="flex gap-2"><span class="text-cyan-light shrink-0">✓</span> {{ reason }}</li>
+              {% endfor %}
+            </ul>
+          </div>
           {% endif %}
           <div class="mt-5 flex flex-wrap gap-2">
             <a href="{% url 'book_offer' %}?platform={{ recommended.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ recommended.item_title|urlencode }}&final_price={{ recommended.final_price }}&original_price={{ recommended.original_price }}&cashback={{ recommended.cashback|default:0 }}"

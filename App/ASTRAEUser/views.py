@@ -31,6 +31,11 @@ from .services.reward_service import grant_reward, get_rule_points, ensure_defau
 from .services.coupon_verifier import verify_and_update_coupon, DemoCouponVerifier
 from .services.coupon_pricing_service import suggest_coupon_price
 from .services.personalization_service import get_personalized_recommendations
+from .services.savings_service import compute_savings_dashboard
+from .services.rewards_summary_service import get_rewards_summary
+from .services.alert_service import create_price_alert as create_alert
+from .services.coupon_marketplace_service import purchase_coupon_atomic, CouponPurchaseError
+from .services.admin_analytics_service import get_admin_dashboard_metrics
 from .services.notification_service import get_unread_count, mark_all_read, create_notification
 from .services.api_helpers import api_success, api_error
 
@@ -44,7 +49,7 @@ def userhome(request):
     for msg in rec_data.get('messages', []):
         recommendations.append({
             'type': msg.get('type', 'tip').title(),
-            'title': msg.get('text', '')[:60],
+            'title': msg.get('text', '')[:80],
             'reason': msg.get('text', ''),
             'link': f"/ASTRAEUser/userdeals/?category={rec_data.get('top_category', '')}",
         })
@@ -57,16 +62,16 @@ def userhome(request):
         })
 
     if user.is_authenticated:
-        total_points = Reward.objects.filter(user=user).aggregate(Sum('points_earned'))['points_earned__sum'] or 0
-        user_orders = Order.objects.filter(user=user).order_by('-created_at')
-        total_orders_count = user_orders.count()
-        total_spent = user_orders.aggregate(Sum('final_price'))['final_price__sum'] or 0
-        estimated_savings = round(float(total_spent) * 0.15, 2)
+        savings = compute_savings_dashboard(user)
+        rewards = get_rewards_summary(user)
+        total_points = rewards['available_points']
+        total_orders_count = rec_data.get('order_count', 0)
+        estimated_savings = savings['total_saved']
         active_coupons = UserCoupon.objects.filter(user=user, is_used=False).order_by('-granted_at')
         active_coupons_count = active_coupons.count()
         recent_coupons = active_coupons[:4]
-        recent_orders = user_orders[:5]
-        recent_searches = SearchHistory.objects.filter(user=user).order_by('-created_at')[:5]
+        recent_orders = Order.objects.filter(user=user).order_by('-created_at')[:5]
+        recent_searches = rec_data.get('recent_searches', [])
     else:
         total_points = 0
         total_orders_count = 0
@@ -75,6 +80,7 @@ def userhome(request):
         recent_coupons = []
         recent_orders = []
         recent_searches = []
+        savings = {}
 
     trending_deals = list(Deal.objects.filter(is_active=True).order_by('-deal_score')[:8])
     popular_coupons = UserCoupon.objects.filter(is_for_sale=True, is_used=False, status='listed')[:6]
@@ -82,6 +88,13 @@ def userhome(request):
 
     context = {
         'user': user,
+        'rec_data': rec_data,
+        'section_title': rec_data.get('section_title', 'Trending on ASTRAE'),
+        'is_personalized': rec_data.get('is_personalized', False),
+        'expiring_deals': rec_data.get('expiring_deals', []),
+        'upcoming_events': rec_data.get('upcoming_events', []),
+        'live_events': rec_data.get('live_events', []),
+        'price_drops': rec_data.get('price_drops', []),
         'total_points': total_points,
         'total_orders_count': total_orders_count,
         'estimated_savings': estimated_savings,
@@ -252,10 +265,7 @@ def userevents(request):
         'active_category': category,
         'active_status': status,
         'categories': Category.objects.filter(is_active=True),
-        'platforms': Platform.objects.filter(
-            name__in=['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'BigBasket', 'Zepto',
-                      'Blinkit', 'Swiggy', 'Zomato', 'Nykaa']
-        ).order_by('name'),
+        'platforms': Platform.objects.filter(status='active').order_by('name'),
         'platform_colors': PLATFORM_COLORS,
         'slot_cards': TIME_SLOT_CARDS,
         'unread_notifications': get_unread_count(request.user),
@@ -454,7 +464,22 @@ def reschedule_order(request, order_id):
 @login_required
 def userwishlist(request):
     items = WishlistItem.objects.filter(user=request.user).order_by('-created_at')
-    context = {'wishlist_items': items, 'unread_notifications': get_unread_count(request.user)}
+    alert_map = {
+        a.wishlist_item_id: a
+        for a in PriceAlert.objects.filter(user=request.user, wishlist_item__isnull=False)
+    }
+    for item in items:
+        item.active_alert = alert_map.get(item.id)
+        if item.current_price and item.lowest_price and item.current_price > item.lowest_price:
+            item.potential_savings = item.current_price - item.lowest_price
+        elif item.active_alert and item.active_alert.potential_savings:
+            item.potential_savings = item.active_alert.potential_savings
+        else:
+            item.potential_savings = 0
+    context = {
+        'wishlist_items': items,
+        'unread_notifications': get_unread_count(request.user),
+    }
     return render(request, 'User/userwishlist.html', context)
 
 
@@ -508,40 +533,11 @@ def mark_notifications_read(request):
 
 @login_required
 def usersavings(request):
-    orders = Order.objects.filter(user=request.user)
-    total_spent = float(orders.aggregate(Sum('final_price'))['final_price__sum'] or 0)
-    total_saved = float(orders.aggregate(Sum('astrae_savings'))['astrae_savings__sum'] or 0)
-    total_points = Reward.objects.filter(user=request.user).aggregate(Sum('points_earned'))['points_earned__sum'] or 0
-
-    category_spending = orders.values('category').annotate(
-        total=Sum('final_price'), count=Count('id')
-    ).order_by('-total')
-
-    platform_usage = orders.values('platform').annotate(
-        count=Count('id')
-    ).order_by('-count')[:8]
-
-    monthly = {}
-    for o in orders:
-        month_key = o.created_at.strftime('%Y-%m')
-        if month_key not in monthly:
-            monthly[month_key] = {'spent': 0, 'saved': 0}
-        monthly[month_key]['spent'] += float(o.final_price)
-        monthly[month_key]['saved'] += float(o.astrae_savings)
-
-    marketplace_earnings = Reward.objects.filter(
-        user=request.user, description__icontains='Sold coupon'
-    ).aggregate(Sum('points_earned'))['points_earned__sum'] or 0
-
+    data = compute_savings_dashboard(request.user)
     context = {
-        'total_spent': total_spent,
-        'total_saved': total_saved or round(total_spent * 0.15, 2),
-        'total_points': total_points,
-        'marketplace_earnings': marketplace_earnings,
-        'category_spending': list(category_spending),
-        'platform_usage': list(platform_usage),
-        'monthly_json': json.dumps(monthly),
-        'category_json': json.dumps({c['category']: float(c['total']) for c in category_spending}),
+        **data,
+        'monthly_json': json.dumps(data['monthly']),
+        'category_json': json.dumps({c['category']: float(c['total']) for c in data['category_spending']}),
         'unread_notifications': get_unread_count(request.user),
     }
     return render(request, 'User/usersavings.html', context)
@@ -639,6 +635,12 @@ def usercoupons(request):
 @require_POST
 def sell_coupon(request, coupon_id):
     coupon = get_object_or_404(UserCoupon, id=coupon_id, user=request.user)
+    if coupon.is_for_sale and coupon.status == 'listed':
+        messages.error(request, 'This coupon is already listed for sale.')
+        return redirect('usercoupons')
+    if coupon.is_used or coupon.status in ('sold', 'expired', 'redeemed'):
+        messages.error(request, 'This coupon cannot be listed.')
+        return redirect('usercoupons')
     price_pts = int(request.POST.get('price_in_points', 50))
     face_value = float(request.POST.get('face_value', 500))
     days_expiry = int(request.POST.get('days_until_expiry', 30))
@@ -665,57 +667,12 @@ def sell_coupon(request, coupon_id):
 
 @login_required
 @require_POST
-@transaction.atomic
 def buy_coupon(request, coupon_id):
-    coupon = get_object_or_404(UserCoupon, id=coupon_id, is_for_sale=True, is_used=False)
-    seller = coupon.user
-    buyer = request.user
-
-    if seller == buyer:
-        messages.error(request, 'You cannot buy your own coupon.')
+    try:
+        coupon = purchase_coupon_atomic(request.user, coupon_id)
+    except CouponPurchaseError as exc:
+        messages.error(request, str(exc))
         return redirect('usercoupons')
-
-    if coupon.status not in ('listed', 'verified'):
-        messages.error(request, 'This coupon is no longer available.')
-        return redirect('usercoupons')
-
-    if coupon.expiry_date and coupon.expiry_date < date.today():
-        coupon.status = 'expired'
-        coupon.save()
-        messages.error(request, 'This coupon has expired.')
-        return redirect('usercoupons')
-
-    buyer_points = Reward.objects.filter(user=buyer).aggregate(Sum('points_earned'))['points_earned__sum'] or 0
-    if buyer_points < coupon.price_in_points:
-        messages.error(request, f'Insufficient balance! Need {coupon.price_in_points} PTS, have {buyer_points} PTS.')
-        return redirect('usercoupons')
-
-    coupon.status = 'reserved'
-    coupon.save()
-
-    grant_reward(buyer, -coupon.price_in_points,
-                 f"Purchased coupon '{coupon.coupon_code}' ({coupon.platform}) from {seller.username}",
-                 rule_key='marketplace_purchase')
-    seller_bonus = get_rule_points('coupon_sold', 15)
-    grant_reward(seller, coupon.price_in_points,
-                 f"Sold coupon '{coupon.coupon_code}' ({coupon.platform}) to {buyer.username}",
-                 rule_key='coupon_sold')
-    if seller_bonus:
-        grant_reward(seller, seller_bonus, f'Bonus for marketplace sale', rule_key='coupon_sold')
-
-    coupon.user = buyer
-    coupon.is_for_sale = False
-    coupon.status = 'sold'
-    coupon.listed_at = None
-    coupon.save()
-
-    create_notification(seller, 'coupon_sold', 'Coupon Sold!',
-                        f'Your {coupon.platform} coupon was purchased for {coupon.price_in_points} PTS.',
-                        '/ASTRAEUser/usercoupons/')
-    create_notification(buyer, 'coupon_purchased', 'Coupon Purchased!',
-                        f'You bought a {coupon.platform} coupon. Check your wallet.',
-                        '/ASTRAEUser/usercoupons/')
-
     messages.success(request, f"Purchased coupon for {coupon.price_in_points} PTS!")
     return redirect('usercoupons')
 
@@ -752,31 +709,36 @@ def add_coupon(request):
 # ─── REWARDS ─────────────────────────────────────────────────────────────────
 
 def userrewards(request):
-    ensure_default_rules()
     if request.user.is_authenticated:
-        reward_history = Reward.objects.filter(user=request.user).order_by('-created_at')
-        total_points = Reward.objects.filter(user=request.user).aggregate(Sum('points_earned'))['points_earned__sum'] or 0
-        total_orders = Order.objects.filter(user=request.user).count()
-        wallet = get_wallet_summary(request.user)
-        redeemed = abs(sum(r.points_earned for r in reward_history if r.points_earned < 0))
-        pending = reward_history.filter(status='pending').aggregate(Sum('points_earned'))['points_earned__sum'] or 0
+        summary = get_rewards_summary(request.user)
+        context = {
+            'reward_history': summary['history'],
+            'total_points': summary['available_points'],
+            'total_orders': summary['total_orders'],
+            'wallet': summary['wallet'],
+            'redeemed_points': summary['used_points'],
+            'pending_points': summary['pending_points'],
+            'lifetime_points': summary['lifetime_points'],
+            'available_points': summary['available_points'],
+            'total_savings': summary['total_savings'],
+            'rules': summary['rules'],
+            'unread_notifications': get_unread_count(request.user),
+        }
     else:
-        reward_history = []
-        total_points = 0
-        total_orders = 0
-        wallet = {}
-        redeemed = 0
-        pending = 0
-
-    context = {
-        'reward_history': reward_history,
-        'total_points': total_points,
-        'total_orders': total_orders,
-        'wallet': wallet,
-        'redeemed_points': redeemed,
-        'pending_points': pending,
-        'unread_notifications': get_unread_count(request.user),
-    }
+        ensure_default_rules()
+        context = {
+            'reward_history': [],
+            'total_points': 0,
+            'total_orders': 0,
+            'wallet': {},
+            'redeemed_points': 0,
+            'pending_points': 0,
+            'lifetime_points': 0,
+            'available_points': 0,
+            'total_savings': 0,
+            'rules': {},
+            'unread_notifications': 0,
+        }
     return render(request, 'User/userrewards.html', context)
 
 
@@ -784,24 +746,68 @@ def userrewards(request):
 
 @login_required
 def useralerts(request):
-    alerts = PriceAlert.objects.filter(user=request.user).order_by('-created_at')
-    context = {'alerts': alerts, 'unread_notifications': get_unread_count(request.user)}
+    alerts = PriceAlert.objects.filter(user=request.user).select_related('wishlist_item').order_by('-created_at')
+    context = {
+        'alerts': alerts,
+        'alert_types': PriceAlert.ALERT_TYPES,
+        'unread_notifications': get_unread_count(request.user),
+    }
     return render(request, 'User/useralerts.html', context)
 
 
 @login_required
 @require_POST
 def create_price_alert(request):
-    PriceAlert.objects.create(
+    try:
+        target = float(request.POST.get('target_price', 0))
+        current = float(request.POST.get('current_price', 0) or 0)
+    except ValueError:
+        messages.error(request, 'Please enter valid prices.')
+        return redirect('useralerts')
+    create_alert(
         user=request.user,
         title=request.POST.get('title', 'Product'),
+        target_price=target,
         platform=request.POST.get('platform', ''),
         category=request.POST.get('category', 'shopping'),
-        target_price=request.POST.get('target_price', 0),
-        current_price=request.POST.get('current_price', 0),
+        current_price=current,
+        alert_type=request.POST.get('alert_type', 'price_drop'),
     )
-    messages.success(request, 'Price alert created!')
+    messages.success(request, 'Alert created! You will be notified when triggered (demo mode).')
     return redirect('useralerts')
+
+
+@login_required
+@require_POST
+def delete_price_alert(request, alert_id):
+    PriceAlert.objects.filter(id=alert_id, user=request.user).delete()
+    messages.success(request, 'Alert removed.')
+    return redirect('useralerts')
+
+
+@login_required
+@require_POST
+def wishlist_create_alert(request, item_id):
+    item = get_object_or_404(WishlistItem, id=item_id, user=request.user)
+    try:
+        target = float(request.POST.get('target_price', item.current_price * 0.9))
+    except (ValueError, TypeError):
+        target = float(item.current_price) * 0.9 if item.current_price else 0
+    if PriceAlert.objects.filter(user=request.user, wishlist_item=item).exists():
+        messages.error(request, 'An alert already exists for this watchlist item.')
+        return redirect('userwishlist')
+    create_alert(
+        user=request.user,
+        title=item.title,
+        target_price=target,
+        platform=item.platform,
+        category=item.category or 'shopping',
+        current_price=float(item.current_price or 0),
+        alert_type='price_drop',
+        wishlist_item=item,
+    )
+    messages.success(request, f'Price alert set for {item.title}.')
+    return redirect('userwishlist')
 
 
 # ─── JSON APIs ───────────────────────────────────────────────────────────────

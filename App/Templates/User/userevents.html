@@ -80,6 +80,7 @@
             <span class="badge badge-cyan">Ending Soon</span>
             {% endif %}
             {% if event.is_demo %}<span class="badge bg-amber-50 text-amber-700 border border-amber-200">Demo</span>{% endif %}
+            <span class="badge bg-indigo/10 text-indigo capitalize">{{ event.event_type_label|default:"Offer" }}</span>
           </div>
           <h3 class="mt-1.5 font-bold leading-snug">{{ event.title }}</h3>
         </div>

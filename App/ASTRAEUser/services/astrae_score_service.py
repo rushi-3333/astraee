@@ -71,6 +71,10 @@ def compute_astrae_scores(candidates: list) -> list:
             reasons.append(f'₹{c["cashback"]} cashback available')
         if c.get('discount', c.get('coupon_discount', 0)) > 0:
             reasons.append(f'₹{c.get("discount", c.get("coupon_discount", 0))} discount applied')
+        if c.get('coupon') or c.get('coupon_code'):
+            reasons.append('Coupon available on this option')
+        if c.get('astrae_score', 0) >= 85:
+            reasons.append('Top ASTRAE Score in this comparison')
 
         copy = dict(c)
         copy['astrae_score'] = astrae_score

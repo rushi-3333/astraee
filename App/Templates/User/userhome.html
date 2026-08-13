@@ -63,7 +63,11 @@
   <!-- Recommended -->
   <section>
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-bold">Recommended for You</h2>
+      <div>
+        <h2 class="text-lg font-bold">{{ section_title }}</h2>
+        {% if not is_personalized %}<p class="text-xs text-muted mt-0.5">Based on popular activity — search & order for personalized picks</p>{% endif %}
+      </div>
+      {% if is_personalized %}<span class="badge badge-indigo">Personalized</span>{% endif %}
     </div>
     <div class="space-y-3">
       {% for rec in recommendations %}
@@ -109,6 +113,57 @@
     </div>
   </section>
 </div>
+
+<!-- Expiring deals, Events, Price drops -->
+<section class="mt-12 grid gap-6 lg:grid-cols-3">
+  <div class="astrae-card p-5">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-bold">Deals expiring soon</h2>
+      <a href="{% url 'userdeals' %}?sort_by=ending_soon" class="text-xs font-semibold text-indigo">View all</a>
+    </div>
+    {% for deal in expiring_deals %}
+    <a href="{% url 'userdeals' %}?category={{ deal.category }}" class="block py-2 border-b border-border last:border-0 text-sm hover:text-indigo">
+      <span class="font-semibold">{{ deal.title|truncatechars:30 }}</span>
+      <span class="text-muted"> · {{ deal.platform_name }}</span>
+    </a>
+    {% empty %}
+    <p class="text-sm text-muted">No deals ending soon.</p>
+    {% endfor %}
+  </div>
+  <div class="astrae-card p-5">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-bold">Events & Offers</h2>
+      <a href="{% url 'userevents' %}" class="text-xs font-semibold text-indigo">View all</a>
+    </div>
+    {% for event in live_events|slice:":3" %}
+    <a href="{% url 'event_detail' event.id %}" class="block py-2 border-b border-border last:border-0 text-sm hover:text-indigo">
+      <span class="badge badge-success !text-[10px] mr-1">Live</span>{{ event.title|truncatechars:28 }}
+    </a>
+    {% endfor %}
+    {% for event in upcoming_events|slice:":2" %}
+    <a href="{% url 'event_detail' event.id %}" class="block py-2 border-b border-border last:border-0 text-sm hover:text-indigo">
+      <span class="badge bg-slate-100 text-muted !text-[10px] mr-1">Soon</span>{{ event.title|truncatechars:28 }}
+    </a>
+    {% empty %}
+    {% if not live_events %}<p class="text-sm text-muted">Browse sample events & offers.</p>{% endif %}
+    {% endfor %}
+  </div>
+  <div class="astrae-card p-5">
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-bold">Price drops</h2>
+      <a href="{% url 'useralerts' %}" class="text-xs font-semibold text-indigo">Alerts</a>
+    </div>
+    {% for alert in price_drops %}
+    <div class="py-2 border-b border-border last:border-0 text-sm">
+      <p class="font-semibold">{{ alert.title|truncatechars:28 }}</p>
+      <p class="text-success text-xs mt-0.5">{{ alert.alert_message }}</p>
+    </div>
+    {% empty %}
+    <p class="text-sm text-muted">Set alerts on products you watch to get notified.</p>
+    <a href="{% url 'userwishlist' %}" class="text-sm font-semibold text-indigo mt-2 inline-block">Open watchlist →</a>
+    {% endfor %}
+  </div>
+</section>
 
 <!-- Best Price Comparisons + Coupon Market -->
 <section class="mt-12 grid gap-6 lg:grid-cols-2">

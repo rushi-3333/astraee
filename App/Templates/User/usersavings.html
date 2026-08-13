@@ -1,46 +1,58 @@
 {% extends 'User/base_user.html' %}
-{% block title %}Savings — ASTRAE{% endblock %}
+{% block title %}My Savings — ASTRAE{% endblock %}
 {% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
 
 {% block content %}
 <div class="mb-8">
-  <h1 class="text-2xl sm:text-3xl font-bold">Your Savings</h1>
-  <p class="mt-1 text-muted">Track every rupee saved through ASTRAE.</p>
+  <h1 class="text-2xl sm:text-3xl font-bold">My Savings</h1>
+  <p class="mt-1 text-muted">Track savings from orders, coupons, cashback, and rewards.</p>
 </div>
 
-<!-- Hero savings -->
 <div class="astrae-card hero-gradient text-white p-8 mb-8 text-center">
   <p class="text-cyan-light text-sm font-medium">Total saved with ASTRAE</p>
   <p class="mt-2 text-4xl sm:text-5xl font-bold">₹{{ total_saved|floatformat:0 }}</p>
-  <p class="mt-2 text-slate-300 text-sm">You saved ₹{{ total_saved|floatformat:0 }} across all your comparisons and deals.</p>
+  {% if has_real_data %}
+  <p class="mt-2 text-slate-300 text-sm">From {{ total_spent|floatformat:0 }} spent across your bookings and comparisons.</p>
+  {% else %}
+  <p class="mt-2 text-slate-300 text-sm">Complete orders to start tracking real savings here.</p>
+  {% endif %}
 </div>
 
-<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-4">
   <div class="astrae-card p-5">
-    <p class="text-xs text-muted uppercase font-medium">Total Spent</p>
-    <p class="mt-2 text-2xl font-bold">₹{{ total_spent|floatformat:0 }}</p>
+    <p class="text-xs text-muted uppercase font-medium">This month</p>
+    <p class="mt-2 text-2xl font-bold text-success">₹{{ month_saved|floatformat:0 }}</p>
+    <p class="text-xs text-muted mt-1">Spent ₹{{ month_spent|floatformat:0 }}</p>
   </div>
   <div class="astrae-card p-5">
-    <p class="text-xs text-muted uppercase font-medium">Comparison Savings</p>
-    <p class="mt-2 text-2xl font-bold text-success">₹{{ total_saved|floatformat:0 }}</p>
+    <p class="text-xs text-muted uppercase font-medium">Comparison savings</p>
+    <p class="mt-2 text-2xl font-bold">₹{{ comparison_savings|floatformat:0 }}</p>
   </div>
   <div class="astrae-card p-5">
-    <p class="text-xs text-muted uppercase font-medium">Reward Points</p>
-    <p class="mt-2 text-2xl font-bold text-indigo">⚡ {{ total_points }}</p>
+    <p class="text-xs text-muted uppercase font-medium">Coupon savings</p>
+    <p class="mt-2 text-2xl font-bold">₹{{ coupon_savings|floatformat:0 }}</p>
   </div>
   <div class="astrae-card p-5">
-    <p class="text-xs text-muted uppercase font-medium">Marketplace Earnings</p>
+    <p class="text-xs text-muted uppercase font-medium">Cashback</p>
+    <p class="mt-2 text-2xl font-bold">₹{{ cashback_savings|floatformat:0 }}</p>
+  </div>
+  <div class="astrae-card p-5">
+    <p class="text-xs text-muted uppercase font-medium">Reward value</p>
+    <p class="mt-2 text-2xl font-bold text-indigo">⚡ {{ reward_savings }}</p>
+  </div>
+  <div class="astrae-card p-5">
+    <p class="text-xs text-muted uppercase font-medium">Marketplace earnings</p>
     <p class="mt-2 text-2xl font-bold">+{{ marketplace_earnings }} PTS</p>
   </div>
 </div>
 
 <div class="grid gap-6 lg:grid-cols-2">
   <div class="astrae-card p-5">
-    <h2 class="font-bold mb-4">Monthly Spending vs Savings</h2>
+    <h2 class="font-bold mb-4">Monthly spending vs savings</h2>
     <canvas id="monthlyChart" height="200"></canvas>
   </div>
   <div class="astrae-card p-5">
-    <h2 class="font-bold mb-4">Category Breakdown</h2>
+    <h2 class="font-bold mb-4">Category breakdown</h2>
     <canvas id="categoryChart" height="200"></canvas>
   </div>
 </div>
@@ -51,7 +63,7 @@
 const monthlyData = {{ monthly_json|safe }};
 const categoryData = {{ category_json|safe }};
 const months = Object.keys(monthlyData).sort();
-if (months.length) {
+if (months.length && document.getElementById('monthlyChart')) {
   new Chart(document.getElementById('monthlyChart'), {
     type: 'bar',
     data: {
@@ -65,12 +77,12 @@ if (months.length) {
   });
 }
 const cats = Object.keys(categoryData);
-if (cats.length) {
+if (cats.length && document.getElementById('categoryChart')) {
   new Chart(document.getElementById('categoryChart'), {
     type: 'doughnut',
     data: {
       labels: cats,
-      datasets: [{ data: cats.map(c => categoryData[c]), backgroundColor: ['#4F46E5','#06B6D4','#059669','#7C3AED','#64748B'] }],
+      datasets: [{ data: cats.map(c => categoryData[c]), backgroundColor: ['#4F46E5','#06B6D4','#059669','#7C3AED','#64748B','#F59E0B'] }],
     },
     options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
   });
