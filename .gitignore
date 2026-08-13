@@ -1,0 +1,5 @@
+# Large ML/model files
+App/Model/embeddings_model/
+
+# ChromaDB generated database
+App/Model/chroma_db/

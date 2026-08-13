@@ -1,0 +1,315 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASTRAE — Search. Infinite Possibilities.</title>
+<meta name="description" content="ASTRAE compares rides, food, shopping and medicine prices with coupons applied, and lets you trade unused vouchers in one marketplace.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          border: '#e6e3dd',
+          background: '#faf9f6',
+          surface: '#ffffff',
+          card: '#ffffff',
+          foreground: '#1c1b19',
+          'muted-foreground': '#6b6862',
+          secondary: '#f1efe9',
+          'secondary-foreground': '#3a382f',
+          primary: '#575ECF',
+          'primary-foreground': '#ffffff',
+          success: '#1a8a5f',
+          warning: '#e0a52c',
+        },
+        fontFamily: {
+          display: ['Outfit', 'sans-serif'],
+          sans: ['Figtree', 'sans-serif'],
+        },
+        boxShadow: {
+          soft: '0 1px 2px rgba(28,27,25,0.04), 0 8px 24px -12px rgba(28,27,25,0.12)',
+          glow: '0 20px 60px -20px rgba(87,94,207,0.45)',
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  body { font-family: 'Figtree', sans-serif; background: #faf9f6; color: #1c1b19; }
+  .font-display { font-family: 'Outfit', sans-serif; }
+  .text-gradient {
+    background: radial-gradient(120% 160% at 0% 0%, #FE7B02 10%, #FE3F21 39%, #F858BC 61%, #575ECF 93%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .bg-gradient-brand {
+    background: radial-gradient(140% 160% at 0% 0%, #FE7B02 10%, #FE3F21 39%, #F858BC 61%, #575ECF 93%);
+  }
+  .bg-gradient-soft {
+    background: linear-gradient(180deg, #fdf3ec 0%, #faf9f6 60%);
+  }
+  .glass {
+    background: rgba(250,249,246,0.75);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .card-hover { transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(28,27,25,0.04), 0 12px 28px -12px rgba(28,27,25,0.18); border-color: #d8d4cb; }
+</style>
+</head>
+<body class="min-h-screen bg-background text-foreground">
+
+<!-- Header -->
+<header class="sticky top-0 z-40 glass border-b border-border">
+  <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+    <a href="{% url 'landingpage' %}" class="flex items-center gap-2.5 rounded-lg">
+      <span class="relative grid size-9 shrink-0 place-items-center rounded-[0.7rem] bg-foreground text-background">
+        <span class="font-display text-[0.95rem] leading-none">A</span>
+        <span class="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-background bg-primary"></span>
+      </span>
+      <span class="font-display text-[1.0625rem] font-semibold tracking-tight">Astraee</span>
+    </a>
+    <div class="flex shrink-0 items-center gap-2">
+      <a href="{% url 'loginn' %}"
+         class="hidden sm:inline-flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+        Log in
+      </a>
+      <a href="{% url 'register' %}"
+         class="hidden sm:inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/92">
+        Get Started
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="relative overflow-hidden bg-gradient-soft">
+  <div class="mx-auto max-w-4xl px-4 py-24 text-center sm:py-32">
+    <div class="mb-6 inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-secondary-foreground">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/></svg>
+      AI-Powered Multi-Service Marketplace
+    </div>
+    <h1 class="font-display text-4xl font-bold leading-[1.05] sm:text-6xl">
+      <span class="text-gradient">Search.</span> Infinite Possibilities.
+    </h1>
+    <p class="mx-auto mt-6 max-w-2xl text-base text-muted-foreground sm:text-lg">
+      Compare prices, discover offers, and save money across rides, food, shopping and medicine — from one intelligent marketplace.
+    </p>
+    <div class="mt-9 flex flex-wrap justify-center gap-3">
+      <a href="{% url 'register' %}"
+         class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-[0.9375rem] font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/92">
+        Get Started
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+      <a href="{% url 'loginn' %}"
+         class="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-surface px-6 text-[0.9375rem] font-medium text-foreground shadow-sm transition-colors hover:bg-secondary">
+        Log in
+      </a>
+    </div>
+
+    <!-- Sample comparison cards -->
+    <div class="mt-16 grid gap-3 sm:grid-cols-3">
+      <div class="card-hover rounded-2xl border border-border bg-card p-4 text-left shadow-soft">
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-2 font-semibold">
+            <span class="text-lg">🚕</span> Uber
+          </span>
+          <span class="text-xs text-muted-foreground">5 min</span>
+        </div>
+        <p class="mt-3 font-display text-xl font-bold">₹320</p>
+        <p class="mt-1 text-xs text-success">₹20 OFF applied</p>
+      </div>
+      <div class="card-hover rounded-2xl border border-border bg-card p-4 text-left shadow-soft">
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-2 font-semibold">
+            <span class="text-lg">🛵</span> Rapido
+          </span>
+          <span class="text-xs text-muted-foreground">7 min</span>
+        </div>
+        <p class="mt-3 font-display text-xl font-bold">₹290</p>
+        <p class="mt-1 text-xs text-success">₹10 OFF applied</p>
+      </div>
+      <div class="card-hover rounded-2xl border border-border bg-card p-4 text-left shadow-soft">
+        <div class="flex items-center justify-between">
+          <span class="flex items-center gap-2 font-semibold">
+            <span class="text-lg">🚙</span> Ola
+          </span>
+          <span class="text-xs text-muted-foreground">6 min</span>
+        </div>
+        <p class="mt-3 font-display text-xl font-bold">₹305</p>
+        <p class="mt-1 text-xs text-success">₹30 OFF applied</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Feature grid -->
+<section class="mx-auto max-w-7xl px-4 py-20">
+  <h2 class="font-display text-3xl font-bold">Built to make every rupee count</h2>
+  <p class="mt-2 max-w-xl text-muted-foreground">Six capabilities that replace the tab-hopping ritual before every purchase.</p>
+
+  <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Unified Search -->
+    <div class="card-hover rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <span class="grid size-11 place-items-center rounded-xl bg-gradient-brand text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      </span>
+      <h3 class="mt-4 font-display text-lg font-bold">Unified Search</h3>
+      <p class="mt-2 text-sm text-muted-foreground">One query fans out to every platform and returns real, coupon-applied prices.</p>
+    </div>
+    <!-- AI Recommendation -->
+    <div class="card-hover rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <span class="grid size-11 place-items-center rounded-xl bg-gradient-brand text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18V5"/><path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4"/><path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5"/><path d="M17.997 5.125a4 4 0 0 1 2.526 5.77"/><path d="M18 18a4 4 0 0 0 2-7.464"/><path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517"/><path d="M6 18a4 4 0 0 1-2-7.464"/><path d="M6.003 5.125a4 4 0 0 0-2.526 5.77"/></svg>
+      </span>
+      <h3 class="mt-4 font-display text-lg font-bold">AI Recommendation</h3>
+      <p class="mt-2 text-sm text-muted-foreground">A savings score out of 100 tells you exactly which option wins and why.</p>
+    </div>
+    <!-- Coupon Marketplace -->
+    <div class="card-hover rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <span class="grid size-11 place-items-center rounded-xl bg-gradient-brand text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m15 9-6 6"/><path d="M9 9h.01"/><path d="M15 15h.01"/></svg>
+      </span>
+      <h3 class="mt-4 font-display text-lg font-bold">Coupon Marketplace</h3>
+      <p class="mt-2 text-sm text-muted-foreground">Buy discounted vouchers or sell the ones you'll never use.</p>
+    </div>
+    <!-- Rewards Wallet -->
+    <div class="card-hover rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <span class="grid size-11 place-items-center rounded-xl bg-gradient-brand text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
+      </span>
+      <h3 class="mt-4 font-display text-lg font-bold">Rewards Wallet</h3>
+      <p class="mt-2 text-sm text-muted-foreground">Every loyalty balance across apps, tracked with expiry reminders.</p>
+    </div>
+    <!-- Smart Sorting -->
+    <div class="card-hover rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <span class="grid size-11 place-items-center rounded-xl bg-gradient-brand text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>
+      </span>
+      <h3 class="mt-4 font-display text-lg font-bold">Smart Sorting</h3>
+      <p class="mt-2 text-sm text-muted-foreground">Sort by lowest price, fastest delivery, best rating or biggest offer.</p>
+    </div>
+    <!-- Verified Sellers -->
+    <div class="card-hover rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <span class="grid size-11 place-items-center rounded-xl bg-gradient-brand text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+      </span>
+      <h3 class="mt-4 font-display text-lg font-bold">Verified Sellers</h3>
+      <p class="mt-2 text-sm text-muted-foreground">Coupon listings are moderated and sellers carry public ratings.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="border-y border-border bg-secondary/40 py-20">
+  <div class="mx-auto max-w-7xl px-4">
+    <h2 class="font-display text-3xl font-bold">How ASTRAE works</h2>
+    <div class="mt-10 grid gap-4 md:grid-cols-3">
+      <div class="rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <span class="font-display text-3xl font-bold text-gradient">01</span>
+        <h3 class="mt-3 font-display text-lg font-bold">Tell ASTRAE what you need</h3>
+        <p class="mt-2 text-sm text-muted-foreground">Pick a category and enter your route, dish, product or medicine.</p>
+      </div>
+      <div class="rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <span class="font-display text-3xl font-bold text-gradient">02</span>
+        <h3 class="mt-3 font-display text-lg font-bold">We compare everything</h3>
+        <p class="mt-2 text-sm text-muted-foreground">Live-style pricing, ETA, ratings and coupons from every provider.</p>
+      </div>
+      <div class="rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <span class="font-display text-3xl font-bold text-gradient">03</span>
+        <h3 class="mt-3 font-display text-lg font-bold">Book the smartest option</h3>
+        <p class="mt-2 text-sm text-muted-foreground">Follow the recommendation or override it — your savings are logged.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Services -->
+<section class="mx-auto max-w-7xl px-4 py-20">
+  <h2 class="font-display text-3xl font-bold">Services we compare</h2>
+  <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <a >
+      <div class="card-hover h-full rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <span class="text-3xl">🚗</span>
+        <h3 class="mt-4 font-display text-base font-bold">Ride Comparison</h3>
+        <p class="mt-1 text-sm text-muted-foreground">Cabs, autos & bikes</p>
+      </div>
+    </a>
+    <a >
+      <div class="card-hover h-full rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <span class="text-3xl">🍔</span>
+        <h3 class="mt-4 font-display text-base font-bold">Food Delivery</h3>
+        <p class="mt-1 text-sm text-muted-foreground">Restaurants near you</p>
+      </div>
+    </a>
+    <a >
+      <div class="card-hover h-full rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <span class="text-3xl">🛍️</span>
+        <h3 class="mt-4 font-display text-base font-bold">Shopping</h3>
+        <p class="mt-1 text-sm text-muted-foreground">Electronics & fashion</p>
+      </div>
+    </a>
+    <a >
+      <div class="card-hover h-full rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <span class="text-3xl">💊</span>
+        <h3 class="mt-4 font-display text-base font-bold">Medicine Delivery</h3>
+        <p class="mt-1 text-sm text-muted-foreground">Pharmacy essentials</p>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="border-t border-border">
+  <div class="mx-auto grid max-w-7xl gap-8 px-4 py-14 md:grid-cols-4">
+    <div>
+      <a href="{% url 'landingpage' %}" class="flex items-center gap-2.5 rounded-lg">
+        <span class="relative grid size-9 shrink-0 place-items-center rounded-[0.7rem] bg-foreground text-background">
+          <span class="font-display text-[0.95rem] leading-none">A</span>
+          <span class="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-background bg-primary"></span>
+        </span>
+        <span class="font-display text-[1.0625rem] font-semibold tracking-tight">Astraee</span>
+      </a>
+      <p class="mt-3 max-w-xs text-sm text-muted-foreground">Search. Infinite Possibilities. An AI-powered comparison and rewards marketplace.</p>
+    </div>
+    <div>
+      <p class="font-display text-sm font-bold">Product</p>
+      <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+        <li><a  class="transition-colors hover:text-foreground">Unified Search</a></li>
+        <li><a  class="transition-colors hover:text-foreground">Coupon Marketplace</a></li>
+        <li><a  class="transition-colors hover:text-foreground">Rewards</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-display text-sm font-bold">Account</p>
+      <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+        <li><a  class="transition-colors hover:text-foreground">Log in</a></li>
+        <li><a  class="transition-colors hover:text-foreground">Register</a></li>
+        <li><a  class="transition-colors hover:text-foreground">Dashboard</a></li>
+      </ul>
+    </div>
+    <div>
+      <p class="font-display text-sm font-bold">Company</p>
+      <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+        <li><a  class="transition-colors hover:text-foreground">Admin Console</a></li>
+        <li><a  class="transition-colors hover:text-foreground">Profile</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-border px-4 py-6 text-center text-xs text-muted-foreground">
+    &copy; 2026 ASTRAE. Phase-1 MVP with demo data.
+  </div>
+</footer>
+
+</body>
+</html>

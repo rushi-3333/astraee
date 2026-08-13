@@ -1,0 +1,63 @@
+{% extends 'User/base_user.html' %}
+
+{% block title %}Rewards Dashboard — ASTRAE{% endblock %}
+
+{% block content %}
+
+<h1 class="font-display text-3xl font-bold">Rewards Dashboard</h1>
+<p class="mt-1 text-muted-foreground">Track your cashback points, lucky order drops (1 – 10,000 PTS), and marketplace transactions.</p>
+
+<!-- Stats -->
+<div class="mt-6 grid gap-4 sm:grid-cols-2">
+  <div class="overflow-hidden rounded-2xl bg-gradient-brand p-6 text-white shadow-glow">
+    <p class="text-sm opacity-85">Total reward points balance</p>
+    <p class="mt-2 font-display text-3xl font-bold">⚡ {{ total_points }} PTS</p>
+  </div>
+  <div class="rounded-2xl border border-border bg-card p-6 shadow-soft">
+    <p class="text-sm text-muted-foreground">Bookings completed</p>
+    <p class="mt-2 font-display text-3xl font-bold text-success">{{ total_orders }}</p>
+  </div>
+</div>
+
+<!-- Points history -->
+<div class="mt-6 rounded-2xl border border-border bg-card p-5 shadow-soft">
+  <h2 class="mb-4 flex items-center gap-2 font-display text-base font-bold">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><circle cx="12" cy="12" r="10"/><path d="M12 6v6h4"/></svg>
+    Points History
+  </h2>
+
+  <div class="overflow-x-auto">
+    <table class="w-full border-collapse text-sm">
+      <thead>
+        <tr class="border-b border-border">
+          <th class="px-3 py-2.5 text-left text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">Date &amp; time</th>
+          <th class="px-3 py-2.5 text-left text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">Transaction description</th>
+          <th class="px-3 py-2.5 text-right text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">Points change</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reward_history %}
+        <tr class="border-b border-border last:border-0">
+          <td class="px-3 py-3 text-muted-foreground">{{ r.created_at|date:"M d, Y H:i" }}</td>
+          <td class="px-3 py-3 font-medium">{{ r.description }}</td>
+          <td class="px-3 py-3 text-right font-bold">
+            {% if r.points_earned > 0 %}
+              <span class="text-success">+{{ r.points_earned }} PTS</span>
+            {% else %}
+              <span class="text-destructive">{{ r.points_earned }} PTS</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3" class="px-3 py-10 text-center text-sm text-muted-foreground">
+            No reward points history recorded yet. Place an order to earn up to 10,000 PTS!
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

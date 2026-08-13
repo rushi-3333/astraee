@@ -1,0 +1,46 @@
+{% extends "Admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}ASTRAE Admin · P2P Marketplace Sales{% endblock %}
+
+{% block content %}
+
+<div class="mb-6">
+  <h1 class="font-display text-2xl font-semibold tracking-tight">Completed Marketplace P2P Sales</h1>
+  <p class="mt-1 text-sm text-muted-foreground">Points spent by buyers on peer-listed coupons across the marketplace.</p>
+</div>
+
+<div class="mb-3 flex items-center justify-between">
+  <span class="text-xs text-muted-foreground">{{ sales_history|length }} transaction{{ sales_history|length|pluralize }} shown</span>
+</div>
+
+<div class="overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-[640px] border-collapse text-sm">
+      <thead>
+        <tr class="bg-secondary text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <th class="px-4 py-3">Date</th>
+          <th class="px-4 py-3">Buyer User</th>
+          <th class="px-4 py-3">Transaction Details</th>
+          <th class="px-4 py-3">Points Transferred</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sales_history %}
+        <tr class="border-t border-border transition-colors hover:bg-secondary/50">
+          <td class="px-4 py-3 text-muted-foreground">{{ s.created_at|date:"M d, Y H:i" }}</td>
+          <td class="px-4 py-3 font-semibold text-foreground">{{ s.user.username }}</td>
+          <td class="px-4 py-3 text-muted-foreground">{{ s.description }}</td>
+          <td class="px-4 py-3 font-bold text-destructive">{{ s.points_earned }} PTS</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4" class="px-4 py-6 text-center text-muted-foreground">No marketplace transactions completed yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
