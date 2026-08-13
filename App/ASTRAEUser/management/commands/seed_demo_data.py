@@ -14,6 +14,7 @@ class Command(BaseCommand):
         call_command('seed_platforms')
         call_command('seed_deals', count=options['deals'])
         call_command('seed_coupons', count=options['coupons'])
+        call_command('seed_events')
         from ASTRAEUser.services.reward_service import ensure_default_rules
         ensure_default_rules()
         self.stdout.write(self.style.SUCCESS('Demo data seed complete.'))

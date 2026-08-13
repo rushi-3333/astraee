@@ -12,11 +12,13 @@ import json
 from .models import (
     Order, Reward, UserCoupon, Deal, WishlistItem, PriceAlert,
     Notification, UserPreference, SearchHistory, Platform, Category,
+    PlatformEvent,
 )
 from .services.order_service import process_booking
 from .services.unified_search_service import execute_smart_search
 from .services.search_service import detect_category
 from .services.deals_service import get_deals, compute_deal_score
+from .services.events_service import get_events, get_event_counts, PLATFORM_COLORS
 from .services.wallet_service import get_wallet_summary, sync_wallet_from_rewards
 from .services.reward_service import grant_reward, get_rule_points, ensure_default_rules
 from .services.coupon_verifier import verify_and_update_coupon, DemoCouponVerifier
@@ -212,6 +214,43 @@ def userdeals(request):
         'unread_notifications': get_unread_count(request.user),
     }
     return render(request, 'User/userdeals.html', context)
+
+
+# ─── EVENTS & OFFERS ─────────────────────────────────────────────────────────
+
+def userevents(request):
+    platform = request.GET.get('platform', '')
+    category = request.GET.get('category', '')
+    status = request.GET.get('status', '')
+
+    events = get_events(filters={
+        'platform': platform,
+        'category': category,
+        'status': status,
+    })
+    event_counts = get_event_counts()
+
+    # Attach platform logo colors for template
+    for event in events:
+        color, initial = PLATFORM_COLORS.get(event.platform_name, ('#4F46E5', event.platform_name[:2]))
+        event.logo_color = color
+        event.logo_initial = initial
+
+    context = {
+        'events': events,
+        'event_counts': event_counts,
+        'active_platform': platform,
+        'active_category': category,
+        'active_status': status,
+        'categories': Category.objects.filter(is_active=True),
+        'platforms': Platform.objects.filter(
+            name__in=['Amazon', 'Flipkart', 'Myntra', 'Ajio', 'BigBasket', 'Zepto',
+                      'Blinkit', 'Swiggy', 'Zomato', 'Nykaa']
+        ).order_by('name'),
+        'platform_colors': PLATFORM_COLORS,
+        'unread_notifications': get_unread_count(request.user),
+    }
+    return render(request, 'User/userevents.html', context)
 
 
 # ─── ORDERS ──────────────────────────────────────────────────────────────────

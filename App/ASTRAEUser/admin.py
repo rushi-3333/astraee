@@ -1,6 +1,6 @@
 from django.contrib import admin
 from ASTRAEUser.models import (
-    Order, Reward, UserCoupon, Category, Platform, Deal,
+    Order, Reward, UserCoupon, Category, Platform, Deal, PlatformEvent,
     Wallet, WalletTransaction, UserPreference, SearchHistory,
     WishlistItem, PriceAlert, Notification, RewardRule,
 )
@@ -40,6 +40,13 @@ class PlatformAdmin(admin.ModelAdmin):
 class DealAdmin(admin.ModelAdmin):
     list_display = ('title', 'platform_name', 'category', 'final_price', 'deal_score', 'is_active')
     list_filter = ('category', 'is_active', 'is_demo')
+
+
+@admin.register(PlatformEvent)
+class PlatformEventAdmin(admin.ModelAdmin):
+    list_display = ('title', 'platform_name', 'category', 'main_benefit', 'starts_at', 'ends_at', 'is_demo', 'is_active')
+    list_filter = ('platform_name', 'category', 'is_demo', 'is_active')
+    search_fields = ('title', 'platform_name', 'description')
 
 
 @admin.register(Wallet)

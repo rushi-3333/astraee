@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator
+from django.utils import timezone
 
 
 # ─── Existing core models (preserved) ───────────────────────────────────────
@@ -185,6 +186,49 @@ class Deal(models.Model):
 
     def __str__(self):
         return f"{self.title} — {self.platform_name}"
+
+
+# ─── Events & Offers ────────────────────────────────────────────────────────
+
+class PlatformEvent(models.Model):
+    """Sales, festivals, and special offers from platforms (demo/sample data)."""
+
+    platform = models.ForeignKey(Platform, on_delete=models.CASCADE, related_name='events', null=True, blank=True)
+    platform_name = models.CharField(max_length=100)
+    category = models.CharField(max_length=50)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, default='')
+    main_benefit = models.CharField(max_length=150, help_text='Primary discount or benefit headline')
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    is_demo = models.BooleanField(default=True, help_text='Sample event for demo/presentation')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['platform_name', 'is_active']),
+            models.Index(fields=['category']),
+            models.Index(fields=['starts_at']),
+            models.Index(fields=['ends_at']),
+        ]
+        verbose_name = 'Platform event'
+        verbose_name_plural = 'Platform events'
+
+    def __str__(self):
+        return f"{self.title} ({self.platform_name})"
+
+    @property
+    def status_label(self):
+        now = timezone.now()
+        if now < self.starts_at:
+            return 'upcoming'
+        if now > self.ends_at:
+            return 'ended'
+        days_left = (self.ends_at - now).days
+        if days_left <= 3:
+            return 'ending_soon'
+        return 'live'
 
 
 # ─── Wallet ─────────────────────────────────────────────────────────────────
