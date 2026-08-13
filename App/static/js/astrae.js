@@ -44,8 +44,72 @@
     });
   };
 
+  var SLOT_LABELS = {
+    asap: 'ASAP — earliest available',
+    morning: 'Morning (8 AM – 11 AM)',
+    afternoon: 'Afternoon (12 PM – 3 PM)',
+    evening: 'Evening (4 PM – 7 PM)',
+    night: 'Night (8 PM – 11 PM)'
+  };
+
+  ASTRAE.initTimeSlotPickers = function () {
+    document.querySelectorAll('[data-time-slot-picker]').forEach(function (picker) {
+      var input = picker.querySelector('[data-time-slot-input]');
+      var cards = picker.querySelectorAll('.time-slot-card');
+      var summary = picker.querySelector('[data-time-slot-summary]');
+      var summaryText = picker.querySelector('[data-time-slot-summary-text]');
+      var offerBadge = picker.closest('[data-offer-card]')
+        ? picker.closest('[data-offer-card]').querySelector('[data-offer-schedule-badge]')
+        : null;
+
+      function updateSummary(code) {
+        var label = SLOT_LABELS[code] || code;
+        if (summary && summaryText) {
+          summaryText.textContent = label;
+          summary.classList.toggle('hidden', !code);
+        }
+        if (offerBadge) {
+          var dateInput = picker.closest('form') && picker.closest('form').querySelector('[name="scheduled_date"]');
+          var dateText = dateInput && dateInput.value ? dateInput.value : '';
+          offerBadge.textContent = dateText && code
+            ? dateText + ' · ' + label
+            : (code ? label : 'Pick a date & time');
+          offerBadge.classList.toggle('hidden', !code && !dateText);
+        }
+      }
+
+      cards.forEach(function (card) {
+        card.addEventListener('click', function () {
+          var code = card.getAttribute('data-slot');
+          input.value = code;
+          cards.forEach(function (c) {
+            var active = c === card;
+            c.classList.toggle('active', active);
+            c.setAttribute('aria-pressed', active ? 'true' : 'false');
+          });
+          updateSummary(code);
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      });
+
+      var dateInput = picker.closest('form') && picker.closest('form').querySelector('[name="scheduled_date"]');
+      if (dateInput) {
+        dateInput.addEventListener('change', function () {
+          if (input.value) updateSummary(input.value);
+          else if (offerBadge && dateInput.value) {
+            offerBadge.textContent = dateInput.value + ' — select a time';
+            offerBadge.classList.remove('hidden');
+          }
+        });
+      }
+
+      if (input.value) updateSummary(input.value);
+    });
+  };
+
   document.addEventListener('DOMContentLoaded', function () {
     ASTRAE.initFormLoading();
+    ASTRAE.initTimeSlotPickers();
     if (document.querySelector('form[data-loading="compare"]')) {
       ASTRAE.initFormLoading();
     }

@@ -6,10 +6,10 @@
   <a href="{% url 'userevents' %}" class="text-sm text-indigo font-semibold hover:underline">← Back to Events & Offers</a>
 </div>
 
-<div class="grid gap-6 lg:grid-cols-[1fr_340px]">
-  <!-- Main content -->
+<div class="grid gap-6 lg:grid-cols-[1fr_360px]">
+  <!-- Main offer card -->
   <div class="space-y-6">
-    <div class="astrae-card overflow-hidden">
+    <div class="astrae-card overflow-hidden" data-offer-card>
       <div class="h-1.5 bg-gradient-to-r from-indigo to-cyan"></div>
       <div class="p-6 sm:p-8">
         <div class="flex items-start gap-4">
@@ -32,6 +32,9 @@
             </div>
             <h1 class="mt-2 text-2xl sm:text-3xl font-bold leading-tight">{{ event.title }}</h1>
             <p class="mt-2 text-muted capitalize">{{ event.category }}</p>
+            <span class="offer-schedule-badge mt-3 {% if not preselected_slot %}hidden{% endif %}" data-offer-schedule-badge>
+              {% if preselected_date and preselected_slot %}Scheduled selection saved{% else %}Pick a date & time{% endif %}
+            </span>
           </div>
         </div>
 
@@ -67,32 +70,54 @@
     </div>
   </div>
 
-  <!-- Booking sidebar -->
+  <!-- Schedule & book on offer card -->
   <aside class="lg:sticky lg:top-24 h-fit">
-    <div class="astrae-card p-6">
-      <h2 class="font-bold text-lg">Ready to book?</h2>
-      <p class="mt-2 text-sm text-muted">Choose your preferred date, time slot, and delivery details on the next step before confirming.</p>
+    <div class="astrae-card p-6" data-offer-card>
+      <h2 class="font-bold text-lg">Select date & time</h2>
+      <p class="mt-1 text-sm text-muted">Choose when you want this offer — shown on your booking card.</p>
 
-      <ul class="mt-4 space-y-2 text-sm text-muted">
-        <li class="flex gap-2"><span class="text-success">✓</span> Select date & time</li>
-        <li class="flex gap-2"><span class="text-success">✓</span> Add address / location</li>
-        <li class="flex gap-2"><span class="text-success">✓</span> Review & confirm booking</li>
-      </ul>
+      <form id="event-schedule-form" action="{% url 'book_offer' %}" method="GET" class="mt-5 space-y-5">
+        <input type="hidden" name="event_id" value="{{ event.id }}">
 
-      {% if user.is_authenticated %}
-      <a href="{% url 'book_offer' %}?event_id={{ event.id }}" class="btn-primary w-full mt-6 !h-11">
-        Book this offer
-      </a>
-      {% else %}
-      <a href="{% url 'loginn' %}?next={% url 'book_offer' %}%3Fevent_id%3D{{ event.id }}" class="btn-primary w-full mt-6 !h-11">
-        Log in to book
-      </a>
-      {% endif %}
+        <div>
+          <label for="scheduled_date" class="text-xs font-medium text-muted">Preferred date <span class="text-destructive">*</span></label>
+          <input type="date" id="scheduled_date" name="scheduled_date" required
+                 value="{{ preselected_date }}"
+                 min="{{ min_date }}" max="{{ max_date }}"
+                 class="astrae-input !h-11 mt-1 w-full">
+          <p class="text-xs text-muted mt-1">Valid {{ min_date }} – {{ max_date }}</p>
+        </div>
 
-      <a href="{% url 'usersearch' %}?category={{ event.category }}&q2={{ event.platform_name|urlencode }}" class="btn-secondary w-full mt-3 !h-10">
+        <div>
+          <p class="text-xs font-medium text-muted mb-2">Preferred time <span class="text-destructive">*</span></p>
+          {% include 'includes/time_slot_picker.html' with slot_cards=slot_cards selected=preselected_slot show_summary=True %}
+        </div>
+
+        <span class="offer-schedule-badge {% if not preselected_slot %}hidden{% endif %}" data-offer-schedule-badge></span>
+
+        {% if user.is_authenticated %}
+        <button type="submit" class="btn-primary w-full !h-11">Continue to book</button>
+        {% else %}
+        <a href="{% url 'loginn' %}" class="btn-primary w-full !h-11 inline-flex items-center justify-center">Log in to book</a>
+        {% endif %}
+      </form>
+
+      <a href="{% url 'usersearch' %}?category={{ event.category }}&q2={{ event.platform_name|urlencode }}" class="btn-secondary w-full mt-3 !h-10 inline-flex items-center justify-center">
         Compare prices instead
       </a>
     </div>
   </aside>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('event-schedule-form')?.addEventListener('submit', function (e) {
+  var slot = this.querySelector('[data-time-slot-input]');
+  if (!slot || !slot.value) {
+    e.preventDefault();
+    alert('Please select a time slot for this offer.');
+  }
+});
+</script>
 {% endblock %}

@@ -96,9 +96,25 @@
         <span class="text-muted">{{ event.starts_at|date:"M d, Y" }} → {{ event.ends_at|date:"M d, Y" }}</span>
       </div>
 
-      <a href="{% url 'event_detail' event.id %}" class="btn-primary w-full mt-4 !h-10">
-        View Offer
-      </a>
+      <!-- Quick time selection on offer card -->
+      <div class="mt-4 pt-4 border-t border-border">
+        <p class="text-xs font-semibold text-muted mb-2">Pick a time for this offer</p>
+        <form class="event-card-schedule" action="{% url 'event_detail' event.id %}" method="GET">
+          <input type="hidden" name="event_id" value="{{ event.id }}">
+          <input type="date" name="scheduled_date" value="{{ event.default_date }}"
+                 min="{{ event.min_date }}" max="{{ event.max_date }}"
+                 class="astrae-input !h-9 !text-xs mt-0 mb-2 w-full">
+          {% include 'includes/time_slot_picker.html' with slot_cards=slot_cards compact=True %}
+          <div class="grid grid-cols-2 gap-2 mt-3">
+            <button type="submit" class="btn-secondary !h-9 !text-xs">View Offer</button>
+            {% if user.is_authenticated %}
+            <button type="submit" formaction="{% url 'book_offer' %}" class="btn-primary !h-9 !text-xs">Book</button>
+            {% else %}
+            <a href="{% url 'loginn' %}" class="btn-primary !h-9 !text-xs inline-flex items-center justify-center">Book</a>
+            {% endif %}
+          </div>
+        </form>
+      </div>
     </div>
   </article>
   {% empty %}
@@ -110,4 +126,19 @@
   </div>
   {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('.event-card-schedule').forEach(function (form) {
+  form.addEventListener('submit', function (e) {
+    var slot = form.querySelector('[data-time-slot-input]');
+    var isBook = e.submitter && e.submitter.getAttribute('formaction');
+    if (isBook && (!slot || !slot.value)) {
+      e.preventDefault();
+      alert('Please select a time slot before booking this offer.');
+    }
+  });
+});
+</script>
 {% endblock %}

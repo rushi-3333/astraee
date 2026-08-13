@@ -1,0 +1,20 @@
+{# Visual time-slot card picker — requires hidden input name="time_slot" #}
+<div class="time-slot-picker" data-time-slot-picker>
+  <input type="hidden" name="{{ field_name|default:'time_slot' }}" value="{{ selected|default:'' }}"
+         {% if required %}required data-time-slot-input{% else %}data-time-slot-input{% endif %}>
+  <div class="time-slot-grid {% if compact %}time-slot-grid-compact{% endif %}">
+    {% for slot in slot_cards %}
+    <button type="button" class="time-slot-card {% if selected == slot.code %}active{% endif %}"
+            data-slot="{{ slot.code }}" aria-pressed="{% if selected == slot.code %}true{% else %}false{% endif %}">
+      <span class="time-slot-icon" aria-hidden="true">{{ slot.icon }}</span>
+      <span class="time-slot-label">{{ slot.label }}</span>
+      <span class="time-slot-range">{{ slot.range }}</span>
+    </button>
+    {% endfor %}
+  </div>
+  {% if show_summary %}
+  <p class="time-slot-summary mt-2 text-sm text-muted hidden" data-time-slot-summary>
+    Selected: <strong class="text-indigo" data-time-slot-summary-text></strong>
+  </p>
+  {% endif %}
+</div>

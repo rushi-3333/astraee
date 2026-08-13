@@ -11,6 +11,7 @@ urlpatterns = [
 
     # Orders & Booking
     path('userorders/', views.userorders, name='userorders'),
+    path('orders/<int:order_id>/reschedule/', views.reschedule_order, name='reschedule_order'),
     path('book/', views.book_offer, name='book_offer'),
     path('place_order/', views.place_order, name='place_order'),
 

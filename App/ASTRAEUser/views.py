@@ -22,9 +22,9 @@ from .services.search_service import detect_category
 from .services.deals_service import get_deals, compute_deal_score
 from .services.events_service import get_events, get_event_counts, PLATFORM_COLORS
 from .services.booking_service import (
-    TIME_SLOTS, validate_booking, build_scheduled_at,
-    category_needs_address, category_needs_pickup, category_needs_quantity,
-    get_default_booking_date,
+    TIME_SLOTS, TIME_SLOT_CARDS, validate_booking, validate_reschedule,
+    build_scheduled_at, category_needs_address, category_needs_pickup,
+    category_needs_quantity, get_default_booking_date, get_event_date_bounds,
 )
 from .services.wallet_service import get_wallet_summary, sync_wallet_from_rewards
 from .services.reward_service import grant_reward, get_rule_points, ensure_default_rules
@@ -242,6 +242,8 @@ def userevents(request):
         color, initial = PLATFORM_COLORS.get(event.platform_name, ('#4F46E5', event.platform_name[:2]))
         event.logo_color = color
         event.logo_initial = initial
+        event.min_date, event.max_date = get_event_date_bounds(event)
+        event.default_date = get_default_booking_date(event).isoformat()
 
     context = {
         'events': events,
@@ -255,6 +257,7 @@ def userevents(request):
                       'Blinkit', 'Swiggy', 'Zomato', 'Nykaa']
         ).order_by('name'),
         'platform_colors': PLATFORM_COLORS,
+        'slot_cards': TIME_SLOT_CARDS,
         'unread_notifications': get_unread_count(request.user),
     }
     return render(request, 'User/userevents.html', context)
@@ -265,9 +268,18 @@ def event_detail(request, event_id):
     color, initial = PLATFORM_COLORS.get(event.platform_name, ('#4F46E5', event.platform_name[:2]))
     event.logo_color = color
     event.logo_initial = initial
+    default_date = get_default_booking_date(event)
+    min_date, max_date = get_event_date_bounds(event)
+    preselected_slot = request.GET.get('time_slot', '')
 
     context = {
         'event': event,
+        'slot_cards': TIME_SLOT_CARDS,
+        'default_date': default_date.isoformat(),
+        'min_date': min_date,
+        'max_date': max_date,
+        'preselected_slot': preselected_slot,
+        'preselected_date': request.GET.get('scheduled_date', default_date.isoformat()),
         'unread_notifications': get_unread_count(request.user),
     }
     return render(request, 'User/userevent_detail.html', context)
@@ -337,6 +349,19 @@ def book_offer(request):
 
     color, initial = PLATFORM_COLORS.get(platform, ('#4F46E5', platform[:2]))
     default_date = get_default_booking_date(event)
+    min_date, max_date = get_event_date_bounds(event)
+
+    if request.method == 'POST':
+        form_data = request.POST
+    else:
+        form_data = {
+            'scheduled_date': request.GET.get('scheduled_date', default_date.isoformat()),
+            'time_slot': request.GET.get('time_slot', ''),
+            'pickup_location': request.GET.get('pickup_location', ''),
+            'delivery_address': request.GET.get('delivery_address', ''),
+            'quantity': request.GET.get('quantity', '1'),
+            'booking_notes': request.GET.get('booking_notes', ''),
+        }
 
     context = {
         'event': event,
@@ -349,11 +374,14 @@ def book_offer(request):
         'logo_color': color,
         'logo_initial': initial,
         'time_slots': TIME_SLOTS,
+        'slot_cards': TIME_SLOT_CARDS,
         'default_date': default_date.isoformat(),
+        'min_date': min_date,
+        'max_date': max_date,
         'needs_address': category_needs_address(category),
         'needs_pickup': category_needs_pickup(category),
         'needs_quantity': category_needs_quantity(category),
-        'form_data': request.POST if request.method == 'POST' else {},
+        'form_data': form_data,
         'unread_notifications': get_unread_count(request.user),
     }
     return render(request, 'User/userbook.html', context)
@@ -370,13 +398,55 @@ def userorders(request):
         orders = orders.filter(status=status_filter)
     if category_filter:
         orders = orders.filter(category=category_filter)
+    orders = list(orders.select_related('event'))
+    today = timezone.localdate()
+    for order in orders:
+        if order.event:
+            order.min_date, order.max_date = get_event_date_bounds(order.event)
+        else:
+            order.min_date = today.isoformat()
+            order.max_date = (today + timedelta(days=30)).isoformat()
+        if order.scheduled_at:
+            order.default_reschedule_date = timezone.localtime(order.scheduled_at).date().isoformat()
+        else:
+            order.default_reschedule_date = order.min_date
+
     context = {
         'orders': orders,
         'active_status': status_filter,
         'active_category': category_filter,
+        'slot_cards': TIME_SLOT_CARDS,
         'unread_notifications': get_unread_count(request.user),
     }
     return render(request, 'User/userorders.html', context)
+
+
+@login_required
+@require_POST
+def reschedule_order(request, order_id):
+    order = get_object_or_404(Order, pk=order_id, user=request.user)
+    if order.status in ('cancelled', 'completed', 'refunded'):
+        messages.error(request, 'This booking can no longer be rescheduled.')
+        return redirect('userorders')
+
+    errors = validate_reschedule(request.POST, event=order.event)
+    if errors:
+        for msg in errors.values():
+            messages.error(request, msg)
+        return redirect('userorders')
+
+    scheduled_date = datetime.strptime(request.POST['scheduled_date'], '%Y-%m-%d').date()
+    time_slot = request.POST['time_slot']
+    order.scheduled_at = build_scheduled_at(scheduled_date, time_slot)
+    order.time_slot = time_slot
+    order.save(update_fields=['scheduled_at', 'time_slot'])
+
+    slot_label = dict(TIME_SLOTS).get(time_slot, time_slot)
+    messages.success(
+        request,
+        f'Schedule updated for {order.item_title}: {scheduled_date:%b %d, %Y} ({slot_label}).',
+    )
+    return redirect('userorders')
 
 
 # ─── WISHLIST ────────────────────────────────────────────────────────────────

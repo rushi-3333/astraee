@@ -11,6 +11,14 @@ TIME_SLOTS = [
     ('night', 'Night (8 PM – 11 PM)'),
 ]
 
+TIME_SLOT_CARDS = [
+    {'code': 'asap', 'label': 'ASAP', 'range': 'Earliest', 'icon': '⚡'},
+    {'code': 'morning', 'label': 'Morning', 'range': '8–11 AM', 'icon': '🌅'},
+    {'code': 'afternoon', 'label': 'Afternoon', 'range': '12–3 PM', 'icon': '☀️'},
+    {'code': 'evening', 'label': 'Evening', 'range': '4–7 PM', 'icon': '🌆'},
+    {'code': 'night', 'label': 'Night', 'range': '8–11 PM', 'icon': '🌙'},
+]
+
 SLOT_START_HOURS = {
     'asap': 0,
     'morning': 8,
@@ -111,3 +119,52 @@ def get_default_booking_date(event=None):
     if today > event_end:
         return event_end
     return today
+
+
+def get_event_date_bounds(event):
+    """Return min/max ISO date strings for an event offer window."""
+    if not event:
+        today = timezone.localdate()
+        return today.isoformat(), (today + timedelta(days=30)).isoformat()
+    start = timezone.localtime(event.starts_at).date()
+    end = timezone.localtime(event.ends_at).date()
+    today = timezone.localdate()
+    min_date = max(start, today) if start >= today else today
+    if min_date > end:
+        min_date = start
+    return min_date.isoformat(), end.isoformat()
+
+
+def validate_reschedule(data, event=None):
+    """Validate date/time-only updates for an existing booking."""
+    errors = {}
+    scheduled_date_str = (data.get('scheduled_date') or '').strip()
+    time_slot = (data.get('time_slot') or '').strip()
+
+    if not scheduled_date_str:
+        errors['scheduled_date'] = 'Please select a date.'
+    else:
+        try:
+            scheduled_date = datetime.strptime(scheduled_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            errors['scheduled_date'] = 'Invalid date format.'
+            scheduled_date = None
+
+        if scheduled_date and scheduled_date < timezone.localdate():
+            errors['scheduled_date'] = 'Cannot schedule in the past.'
+
+        if scheduled_date and event:
+            event_start = timezone.localtime(event.starts_at).date()
+            event_end = timezone.localtime(event.ends_at).date()
+            if scheduled_date < event_start:
+                errors['scheduled_date'] = f'Offer starts on {event_start:%b %d, %Y}.'
+            elif scheduled_date > event_end:
+                errors['scheduled_date'] = f'Offer ends on {event_end:%b %d, %Y}.'
+
+    valid_slots = {code for code, _ in TIME_SLOTS}
+    if not time_slot:
+        errors['time_slot'] = 'Please select a time slot.'
+    elif time_slot not in valid_slots:
+        errors['time_slot'] = 'Invalid time slot.'
+
+    return errors

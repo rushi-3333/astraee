@@ -67,6 +67,33 @@
       {% if order.cashback %}<span>Cashback ₹{{ order.cashback }}</span>{% endif %}
       {% if order.coupon_applied %}<span>Coupon {{ order.coupon_applied }}</span>{% endif %}
     </div>
+
+    {% if order.status != 'cancelled' and order.status != 'completed' and order.status != 'refunded' %}
+    <div class="mt-4 border-t border-border pt-4">
+      <button type="button" class="text-sm font-semibold text-indigo hover:underline"
+              data-toggle-reschedule="reschedule-{{ order.id }}">
+        Change date & time
+      </button>
+      <div id="reschedule-{{ order.id }}" class="reschedule-panel hidden">
+        <p class="text-sm font-semibold mb-3">Update schedule for this offer</p>
+        <form method="POST" action="{% url 'reschedule_order' order.id %}">
+          {% csrf_token %}
+          <div class="grid gap-4 sm:grid-cols-2 mb-4">
+            <div>
+              <label class="text-xs font-medium text-muted">New date</label>
+              <input type="date" name="scheduled_date" required
+                     value="{{ order.default_reschedule_date }}"
+                     min="{{ order.min_date }}" max="{{ order.max_date }}"
+                     class="astrae-input !h-10 mt-1 w-full">
+            </div>
+          </div>
+          <p class="text-xs font-medium text-muted mb-2">New time slot</p>
+          {% include 'includes/time_slot_picker.html' with slot_cards=slot_cards selected=order.time_slot %}
+          <button type="submit" class="btn-primary !h-10 mt-4">Save new time</button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
   </article>
   {% empty %}
   <div class="empty-state">
@@ -77,4 +104,20 @@
   </div>
   {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.querySelectorAll('[data-toggle-reschedule]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var panel = document.getElementById(btn.getAttribute('data-toggle-reschedule'));
+    if (panel) {
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        if (window.ASTRAE && ASTRAE.initTimeSlotPickers) ASTRAE.initTimeSlotPickers();
+      }
+    }
+  });
+});
+</script>
 {% endblock %}
