@@ -85,6 +85,17 @@ def userhome(request):
         'recommendations': recommendations,
         'recent_searches': recent_searches,
         'unread_notifications': get_unread_count(user),
+        'category_list': [
+            ('ride', 'Rides', '🚗'), ('food', 'Food', '🍔'), ('grocery', 'Grocery', '🛒'),
+            ('shopping', 'Shopping', '🛍️'), ('fashion', 'Fashion', '👗'), ('beauty', 'Beauty', '💄'),
+            ('medicine', 'Medicine', '💊'),
+        ],
+        'how_it_works': [
+            ('1', 'Search once', 'Enter what you need — rides, food, products or medicine.'),
+            ('2', 'Compare all', 'See prices, ratings, cashback & ASTRAE Score side by side.'),
+            ('3', 'Book & save', 'Pick the best value option and complete your order.'),
+            ('4', 'Earn more', 'Get rewards, trade coupons, and track your savings.'),
+        ],
     }
     return render(request, 'User/userhome.html', context)
 
@@ -170,6 +181,10 @@ def usersearch(request):
             ('medicine', 'Medicine', '💊'),
         ],
     }
+    if request.user.is_authenticated:
+        context['recent_searches'] = SearchHistory.objects.filter(user=request.user).order_by('-created_at')[:5]
+    else:
+        context['recent_searches'] = []
     return render(request, 'User/usersearch.html', context)
 
 

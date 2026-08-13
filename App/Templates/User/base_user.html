@@ -5,197 +5,75 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}ASTRAE{% endblock %}</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          border: '#e6e3dd',
-          input: '#e6e3dd',
-          background: '#faf9f6',
-          surface: '#ffffff',
-          card: '#ffffff',
-          sidebar: '#f5f3ee',
-          foreground: '#1c1b19',
-          'muted-foreground': '#6b6862',
-          secondary: '#f1efe9',
-          'secondary-foreground': '#3a382f',
-          primary: '#575ECF',
-          'primary-foreground': '#ffffff',
-          success: '#1a8a5f',
-          warning: '#e0a52c',
-          destructive: '#c53434',
-        },
-        fontFamily: {
-          display: ['Outfit', 'sans-serif'],
-          sans: ['Figtree', 'sans-serif'],
-        },
-        boxShadow: {
-          soft: '0 1px 2px rgba(28,27,25,0.04), 0 8px 24px -12px rgba(28,27,25,0.12)',
-          glow: '0 20px 60px -20px rgba(87,94,207,0.45)',
-        },
-      },
-    },
-  };
-</script>
-
-<style>
-  body { font-family: 'Figtree', sans-serif; background: #faf9f6; color: #1c1b19; }
-  .font-display { font-family: 'Outfit', sans-serif; }
-  .bg-gradient-brand {
-    background: radial-gradient(140% 160% at 0% 0%, #FE7B02 10%, #FE3F21 39%, #F858BC 61%, #575ECF 93%);
-  }
-  .glass {
-    background: rgba(250,249,246,0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
-  .card-hover { transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
-  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(28,27,25,0.04), 0 12px 28px -12px rgba(28,27,25,0.18); border-color: #d8d4cb; }
-  .nav-link { display: flex; align-items: center; gap: 0.75rem; border-radius: 0.5rem; padding: 0.625rem 0.75rem; font-size: 0.875rem; font-weight: 500; color: #6b6862; transition: background .15s, color .15s; }
-  .nav-link:hover { background: rgba(241,239,233,0.7); color: #1c1b19; }
-  .nav-link.nav-active { background: #f1efe9; color: #1c1b19; }
-  .nav-link.nav-active svg { color: #575ECF; }
-</style>
+{% include 'includes/astrae_head.html' %}
 {% block extra_head %}{% endblock %}
 </head>
-<body class="min-h-dvh bg-background text-foreground lg:flex">
+<body class="min-h-dvh bg-background text-foreground antialiased">
 
-<!-- Desktop sidebar -->
-<aside class="sticky top-0 hidden h-dvh w-[15.5rem] shrink-0 flex-col border-r border-border bg-sidebar px-3 py-4 lg:flex">
-  <div class="px-2 pb-5">
-    <a href="{% url 'userhome' %}" class="flex items-center gap-2.5 rounded-lg">
-      <span class="relative grid size-9 shrink-0 place-items-center rounded-[0.7rem] bg-foreground text-background">
-        <span class="font-display text-[0.95rem] leading-none">A</span>
-        <span class="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-sidebar bg-primary"></span>
-      </span>
-      <span class="font-display text-[1.0625rem] font-semibold tracking-tight">Astraee</span>
-    </a>
-  </div>
-  <p class="px-3 pb-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">Navigation</p>
-  <nav class="flex flex-col gap-0.5">
-    {% with n=request.resolver_match.url_name %}
-    <a href="{% url 'userhome' %}" class="nav-link {% if n == 'userhome' %}nav-active{% endif %}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      <span>Home</span>
-    </a>
-    <a href="{% url 'usersearch' %}" class="nav-link {% if n == 'usersearch' %}nav-active{% endif %}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-      <span>Compare</span>
-    </a>
-    <a href="{% url 'userdeals' %}" class="nav-link {% if n == 'userdeals' %}nav-active{% endif %}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-      <span>Deals</span>
-    </a>
-    <a href="{% url 'usercoupons' %}" class="nav-link {% if n == 'usercoupons' %}nav-active{% endif %}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 1 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>
-      <span>Coupon Market</span>
-    </a>
-    <a href="{% url 'userrewards' %}" class="nav-link {% if n == 'userrewards' %}nav-active{% endif %}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>
-      <span>Rewards</span>
-    </a>
-    <a href="{% url 'userorders' %}" class="nav-link {% if n == 'userorders' %}nav-active{% endif %}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      <span>Orders</span>
-    </a>
-    <a href="{% url 'userwishlist' %}" class="nav-link {% if n == 'userwishlist' %}nav-active{% endif %}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
-      <span>Wishlist</span>
-    </a>
-    <a href="{% url 'userprofile' %}" class="nav-link {% if n == 'userprofile' %}nav-active{% endif %}">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      <span>Profile</span>
-    </a>
-    {% endwith %}
-  </nav>
+<!-- Top Navbar -->
+<header class="astrae-nav sticky top-0 z-50">
+  <div class="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
+    {% include 'includes/logo.html' %}
 
-  <div class="mt-auto space-y-3">
-    <a href="{% url 'user_logout' %}"
-       class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10">
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
-      <span class="truncate">Logout</span>
-    </a>
-    <div class="rounded-xl border border-border bg-surface-muted p-3">
-      <p class="text-sm font-semibold">{{ user.first_name|default:user.username }}</p>
-      <p class="mt-1 truncate text-xs text-muted-foreground">{{ user.email|default:"Registered user" }}</p>
-    </div>
-  </div>
-</aside>
+    <!-- Desktop nav links -->
+    <nav class="hidden lg:flex items-center gap-1 ml-4">
+      {% with n=request.resolver_match.url_name %}
+      <a href="{% url 'userhome' %}" class="nav-item {% if n == 'userhome' %}active{% endif %}">Home</a>
+      <a href="{% url 'usersearch' %}" class="nav-item {% if n == 'usersearch' %}active{% endif %}">Compare</a>
+      <a href="{% url 'userdeals' %}" class="nav-item {% if n == 'userdeals' %}active{% endif %}">Deals</a>
+      <a href="{% url 'usercoupons' %}" class="nav-item {% if n == 'usercoupons' %}active{% endif %}">Coupons</a>
+      <a href="{% url 'userrewards' %}" class="nav-item {% if n == 'userrewards' %}active{% endif %}">Rewards</a>
+      {% endwith %}
+    </nav>
 
-<div class="flex min-w-0 flex-1 flex-col">
-
-  <!-- Topbar -->
-  <header class="sticky top-0 z-40 border-b border-border glass">
-    <div class="flex items-center gap-2 px-4 py-3 sm:px-6">
-      <div class="flex min-w-0 items-center gap-2 lg:hidden">
-        <a href="{% url 'userhome' %}" class="flex items-center gap-2.5 rounded-lg">
-          <span class="relative grid size-9 shrink-0 place-items-center rounded-[0.7rem] bg-foreground text-background">
-            <span class="font-display text-[0.95rem] leading-none">A</span>
-            <span class="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-background bg-primary"></span>
-          </span>
-          <span class="font-display text-[1.0625rem] font-semibold tracking-tight">Astraee</span>
-        </a>
-      </div>
-
-      <a href="{% url 'usersearch' %}"
-         class="hidden h-10 w-64 items-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm text-muted-foreground shadow-sm transition-colors hover:bg-secondary md:flex">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-        <span class="flex-1 text-left">Search once. Compare everything…</span>
+    <!-- Right actions -->
+    <div class="ml-auto flex items-center gap-1 sm:gap-2">
+      <a href="{% url 'usersearch' %}" class="btn-ghost hide-mobile" aria-label="Search">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
       </a>
-
       {% if user.is_authenticated %}
-      <a href="{% url 'usernotifications' %}" aria-label="Notifications"
-         class="relative grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        {% if unread_notifications %}<span class="absolute right-1.5 top-1.5 size-2 rounded-full bg-destructive"></span>{% endif %}
+      <a href="{% url 'usernotifications' %}" class="btn-ghost relative" aria-label="Notifications">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        {% if unread_notifications %}<span class="absolute top-1.5 right-1.5 size-2 rounded-full bg-destructive"></span>{% endif %}
       </a>
-      <a href="{% url 'usersavings' %}" aria-label="Savings"
-         class="hidden size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:grid">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <a href="{% url 'userprofile' %}" class="btn-ghost flex items-center gap-2 !px-2" aria-label="Profile">
+        <span class="grid size-8 place-items-center rounded-full bg-indigo text-white text-xs font-bold">
+          {{ user.first_name|default:user.username|slice:":1"|upper }}
+        </span>
+        <span class="hidden md:block text-sm font-semibold max-w-[8rem] truncate">{{ user.first_name|default:user.username }}</span>
       </a>
+      {% else %}
+      <a href="{% url 'loginn' %}" class="btn-ghost text-sm">Log in</a>
+      <a href="{% url 'register' %}" class="btn-primary !h-9 !text-sm hidden sm:inline-flex">Sign up</a>
       {% endif %}
-
-      <a href="{% url 'usersearch' %}" aria-label="Search"
-         class="ml-auto grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:hidden">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-      </a>
-
-      <a href="{% url 'user_logout' %}" aria-label="Logout"
-         class="grid size-10 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive lg:hidden">
-        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
-      </a>
     </div>
-  </header>
+  </div>
+</header>
 
-  <!-- Page content -->
-  <main class="mx-auto w-full max-w-[84rem] flex-1 px-4 py-6 pb-28 sm:px-6 sm:py-8 lg:pb-10">
-    {% block content %}{% endblock %}
-  </main>
-</div>
+<!-- Main content -->
+<main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8 lg:pb-10">
+  {% if messages %}
+  <div class="mb-6 space-y-2">
+    {% for message in messages %}
+    <div class="alert-success">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
 
-<!-- Mobile bottom nav -->
-<nav aria-label="Bottom" class="fixed inset-x-0 bottom-0 z-30 border-t border-border glass pb-[env(safe-area-inset-bottom)] lg:hidden">
+<!-- Mobile bottom navigation -->
+<nav aria-label="Mobile" class="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-white/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)] lg:hidden">
   <ul class="grid grid-cols-5">
     {% with n=request.resolver_match.url_name %}
-    <li><a href="{% url 'userhome' %}" class="mob-nav {% if n == 'userhome' %}mob-nav-active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</a></li>
-    <li><a href="{% url 'usersearch' %}" class="mob-nav {% if n == 'usersearch' %}mob-nav-active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>Compare</a></li>
-    <li><a href="{% url 'userdeals' %}" class="mob-nav {% if n == 'userdeals' %}mob-nav-active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Deals</a></li>
-    <li><a href="{% url 'usercoupons' %}" class="mob-nav {% if n == 'usercoupons' %}mob-nav-active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 9a3 3 0 1 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/></svg>Coupons</a></li>
-    <li><a href="{% url 'userprofile' %}" class="mob-nav {% if n == 'userprofile' or n == 'userorders' or n == 'userwishlist' or n == 'usernotifications' or n == 'usersavings' or n == 'useralerts' %}mob-nav-active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>More</a></li>
+    <li><a href="{% url 'userhome' %}" class="mob-nav {% if n == 'userhome' %}active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</a></li>
+    <li><a href="{% url 'usersearch' %}" class="mob-nav {% if n == 'usersearch' %}active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search</a></li>
+    <li><a href="{% url 'userdeals' %}" class="mob-nav {% if n == 'userdeals' %}active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Deals</a></li>
+    <li><a href="{% url 'userrewards' %}" class="mob-nav {% if n == 'userrewards' %}active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></svg>Rewards</a></li>
+    <li><a href="{% url 'userprofile' %}" class="mob-nav {% if n == 'userprofile' or n == 'userorders' or n == 'userwishlist' or n == 'usersavings' or n == 'useralerts' or n == 'usernotifications' %}active{% endif %}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Profile</a></li>
     {% endwith %}
   </ul>
 </nav>
-<style>
-  .mob-nav { display: flex; min-height: 3.5rem; flex-direction: column; align-items: center; justify-content: center; gap: 0.25rem; font-size: 0.6875rem; font-weight: 500; color: #6b6862; transition: color .15s; }
-  .mob-nav-active { color: #575ECF; }
-</style>
 
 {% block extra_scripts %}{% endblock %}
 </body>

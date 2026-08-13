@@ -1,0 +1,35 @@
+{% load static %}
+<!-- Shared head: fonts, Tailwind config, ASTRAE design system -->
+<link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy: { DEFAULT: '#0B1220', light: '#0F172A' },
+          indigo: { DEFAULT: '#4F46E5', light: '#6366F1' },
+          cyan: { DEFAULT: '#06B6D4', light: '#22D3EE' },
+          border: '#E2E8F0',
+          background: '#F8FAFC',
+          surface: '#FFFFFF',
+          foreground: '#0F172A',
+          muted: '#64748B',
+          success: '#059669',
+          warning: '#D97706',
+          destructive: '#DC2626',
+        },
+        fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] },
+        boxShadow: {
+          card: '0 1px 3px rgba(15,23,42,0.06), 0 8px 24px -8px rgba(15,23,42,0.1)',
+          elevated: '0 4px 6px rgba(15,23,42,0.05), 0 20px 40px -12px rgba(79,70,229,0.12)',
+        },
+      },
+    },
+  };
+</script>
+<link rel="stylesheet" href="{% static 'css/astrae.css' %}">
+<script src="{% static 'js/astrae.js' %}" defer></script>

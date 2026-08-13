@@ -1,170 +1,145 @@
 {% extends 'User/base_user.html' %}
-
 {% block title %}Coupon Marketplace — ASTRAE{% endblock %}
 
 {% block content %}
-
-<div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+<div class="flex flex-wrap items-start justify-between gap-4 mb-8">
   <div>
-    <h1 class="font-display text-3xl font-bold">Coupon Marketplace</h1>
-    <p class="mt-1 text-muted-foreground">Buy coupons using Reward Points, or sell unused coupons to earn points.</p>
+    <h1 class="text-2xl sm:text-3xl font-bold">Coupon Marketplace</h1>
+    <p class="mt-1 text-muted">Buy, sell, and manage coupons with reward points.</p>
   </div>
-  <div class="inline-flex items-center gap-2 self-start rounded-full bg-gradient-brand px-5 py-2.5 text-sm font-bold text-white shadow-soft">
-    ⚡ {{ user_points }} PTS available
-  </div>
-</div>
-
-{% if messages %}
-  <div class="mt-5 space-y-2">
-    {% for message in messages %}
-      <div class="rounded-lg border border-success/30 bg-success/10 px-3 py-2.5 text-sm text-success">
-        {{ message }}
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
-
-<!-- Tabs -->
-<div class="mt-6">
-  <div role="tablist" class="inline-flex h-9 items-center justify-center rounded-lg p-1 text-muted-foreground" style="background:#f1efe9;">
-    <button type="button" id="tab-btn-mine" onclick="showCouponTab('mine')" class="coupon-tab-btn inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium transition-all" aria-selected="true">My Coupons</button>
-    <button type="button" id="tab-btn-add" onclick="showCouponTab('add')" class="coupon-tab-btn inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium transition-all" aria-selected="false">Add Coupon</button>
-    <button type="button" id="tab-btn-market" onclick="showCouponTab('market')" class="coupon-tab-btn inline-flex items-center justify-center rounded-md px-3 py-1 text-sm font-medium transition-all" aria-selected="false">Marketplace</button>
-  </div>
-
-  <!-- My Coupons panel -->
-  <div id="tab-panel-mine" class="mt-6">
-    <h2 class="mb-4 flex items-center gap-2 font-display text-base font-bold">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M2 9a3 3 0 1 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 1 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M9 9h.01"/><path d="m15 9-6 6"/><path d="M15 15h.01"/></svg>
-      My Issued Coupons
-    </h2>
-
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {% for coupon in my_coupons %}
-      <div class="rounded-2xl border {% if coupon.is_for_sale %}border-dashed border-primary/50{% else %}border-border{% endif %} bg-card p-5 shadow-soft">
-        <span class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">{{ coupon.platform }}</span>
-        <div class="mt-2 font-display text-xl font-bold tracking-wide text-primary">{{ coupon.coupon_code }}</div>
-        <div class="mt-1 text-sm font-semibold text-success">{{ coupon.discount_text }}</div>
-
-        {% if coupon.is_for_sale %}
-          <span class="mt-4 inline-block rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-            Listed for sale ({{ coupon.price_in_points }} PTS)
-          </span>
-        {% else %}
-          <form action="{% url 'sell_coupon' coupon.id %}" method="POST" class="mt-4 space-y-2">
-            {% csrf_token %}
-            <div class="grid grid-cols-2 gap-2">
-              <input type="number" name="price_in_points" value="50" min="10" placeholder="Price (PTS)"
-                     class="h-9 rounded-lg border border-input bg-surface px-2 text-sm">
-              <input type="number" name="face_value" value="500" min="50" placeholder="Face value ₹"
-                     class="h-9 rounded-lg border border-input bg-surface px-2 text-sm">
-            </div>
-            <input type="number" name="days_until_expiry" value="30" min="1" placeholder="Days until expiry"
-                   class="h-9 w-full rounded-lg border border-input bg-surface px-2 text-sm">
-            <button type="submit" class="h-9 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/92">Verify & List for sale</button>
-          </form>
-        {% endif %}
-        {% if coupon.is_demo %}<p class="mt-2 text-[0.625rem] text-warning">Demo coupon</p>{% endif %}
-      </div>
-      {% empty %}
-      <p class="col-span-full py-10 text-center text-sm text-muted-foreground">
-        You have no active coupons. Complete searches and bookings to earn coupons!
-      </p>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Add coupon panel -->
   {% if user.is_authenticated %}
-  <div id="tab-panel-add" class="mt-6 hidden">
-    <h2 class="mb-4 font-display text-base font-bold">Add & Verify Coupon (Demo)</h2>
-    <div class="max-w-lg rounded-2xl border border-border bg-card p-5 shadow-soft">
-      <p class="mb-4 text-sm text-muted-foreground">Coupons are verified in demo mode (format, expiry, duplicates). Not validated against real platforms.</p>
-      <form action="{% url 'add_coupon' %}" method="POST" class="space-y-4">
-        {% csrf_token %}
-        <div class="space-y-2">
-          <label class="text-sm font-medium">Platform</label>
-          <select name="platform" required class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm">
-            <option value="Amazon">Amazon</option><option value="Flipkart">Flipkart</option>
-            <option value="Swiggy">Swiggy</option><option value="Zomato">Zomato</option>
-            <option value="Uber">Uber</option><option value="Myntra">Myntra</option>
-            <option value="BigBasket">BigBasket</option><option value="Nykaa">Nykaa</option>
-          </select>
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm font-medium">Coupon code</label>
-          <input type="text" name="coupon_code" required placeholder="DEMO-MYCODE123" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm uppercase">
-        </div>
-        <div class="space-y-2">
-          <label class="text-sm font-medium">Discount description</label>
-          <input type="text" name="discount_text" value="Flat ₹100 off" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-2">
-            <label class="text-sm font-medium">Face value (₹)</label>
-            <input type="number" name="face_value" value="500" min="50" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm">
-          </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium">Expires in (days)</label>
-            <input type="number" name="days_until_expiry" value="30" min="1" class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm">
-          </div>
-        </div>
-        <button type="submit" class="h-10 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground">Add coupon</button>
-      </form>
-    </div>
+  <div class="astrae-card px-5 py-3">
+    <p class="text-xs text-muted">Your balance</p>
+    <p class="text-xl font-bold text-indigo">⚡ {{ user_points }} PTS</p>
   </div>
   {% endif %}
+</div>
 
-  <!-- Marketplace panel -->
-  <div id="tab-panel-market" class="mt-6 hidden">
-    <h2 class="mb-4 flex items-center gap-2 font-display text-base font-bold">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-      Available in Marketplace
-    </h2>
+<!-- Tabs: Buy | Sell | My -->
+<div class="tab-list mb-6" role="tablist">
+  <button type="button" class="tab-btn" data-tab-group="coupons" data-tab="buy" aria-selected="true">Buy Coupons</button>
+  <button type="button" class="tab-btn" data-tab-group="coupons" data-tab="sell" aria-selected="false">Sell Coupons</button>
+  <button type="button" class="tab-btn" data-tab-group="coupons" data-tab="mine" aria-selected="false">My Coupons</button>
+</div>
 
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {% for coupon in marketplace_coupons %}
-      <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
-        <span class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">{{ coupon.platform }} · Seller: {{ coupon.user.username }}</span>
-        <div class="mt-2 font-display text-xl font-bold tracking-wide text-primary">{% if coupon.is_demo %}●●●●●●●●{% else %}{{ coupon.coupon_code }}{% endif %}</div>
-        <p class="mt-1 text-xs text-muted-foreground">Code revealed after purchase</p>
-        <div class="mt-1 text-sm font-semibold text-success">{{ coupon.discount_text }}</div>
-
-        <form action="{% url 'buy_coupon' coupon.id %}" method="POST" class="mt-4">
-          {% csrf_token %}
-          <button type="submit"
-                  class="h-9 w-full rounded-lg bg-success text-sm font-semibold text-white transition-colors hover:bg-success/90">
-            Buy for {{ coupon.price_in_points }} PTS
-          </button>
-        </form>
+<!-- BUY -->
+<div data-tab-panel="coupons" data-tab="buy">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for coupon in marketplace_coupons %}
+    <div class="astrae-card p-5">
+      <div class="flex justify-between items-start">
+        <span class="font-bold">{{ coupon.platform }}</span>
+        {% if coupon.status == 'verified' or coupon.status == 'listed' %}
+        <span class="badge badge-success">Verified</span>
+        {% endif %}
       </div>
-      {% empty %}
-      <p class="col-span-full py-10 text-center text-sm text-muted-foreground">
-        No coupons currently listed for sale in the marketplace.
-      </p>
-      {% endfor %}
+      <p class="mt-2 text-sm text-muted">{{ coupon.discount_text }}</p>
+      <p class="mt-1 text-xs text-muted">Seller: {{ coupon.user.username }}</p>
+      <div class="mt-4 flex justify-between items-end">
+        <div>
+          <p class="text-xs text-muted">Price</p>
+          <p class="text-xl font-bold text-indigo">{{ coupon.price_in_points }} PTS</p>
+        </div>
+        {% if coupon.expiry_date %}
+        <p class="text-xs text-muted">Exp {{ coupon.expiry_date|date:"M d, Y" }}</p>
+        {% endif %}
+      </div>
+      {% if user.is_authenticated and coupon.user != user %}
+      <form action="{% url 'buy_coupon' coupon.id %}" method="POST" class="mt-4" data-loading="Purchasing coupon...">
+        {% csrf_token %}
+        <button type="submit" class="btn-primary w-full !h-10">Buy coupon</button>
+      </form>
+      {% elif not user.is_authenticated %}
+      <a href="{% url 'loginn' %}" class="btn-secondary w-full mt-4 !h-10 flex items-center justify-center">Log in to buy</a>
+      {% endif %}
     </div>
+    {% empty %}
+    <div class="col-span-full empty-state">
+      <div class="empty-state-icon">🎫</div>
+      <p class="font-semibold">No coupons for sale</p>
+      <p class="mt-1 text-sm text-muted">Check back later or list your own coupons.</p>
+    </div>
+    {% endfor %}
   </div>
 </div>
 
-<style>
-  .coupon-tab-btn[aria-selected="true"] { background: #ffffff; color: #1c1b19; box-shadow: 0 1px 2px rgba(28,27,25,0.06); }
-  .coupon-tab-btn[aria-selected="false"] { color: #6b6862; }
-</style>
+<!-- SELL (add new + list mine for sale) -->
+<div data-tab-panel="coupons" data-tab="sell" class="hidden">
+  {% if user.is_authenticated %}
+  <div class="astrae-card p-6 mb-6 max-w-lg">
+    <h2 class="font-bold mb-1">Add & list a coupon</h2>
+    <p class="text-sm text-muted mb-4">Demo verification — format, expiry & duplicate checks only.</p>
+    <form action="{% url 'add_coupon' %}" method="POST" class="space-y-3">
+      {% csrf_token %}
+      <select name="platform" class="astrae-input" required>
+        <option value="Amazon">Amazon</option><option value="Swiggy">Swiggy</option>
+        <option value="Uber">Uber</option><option value="Flipkart">Flipkart</option>
+        <option value="Myntra">Myntra</option><option value="Zomato">Zomato</option>
+      </select>
+      <input type="text" name="coupon_code" placeholder="Coupon code" class="astrae-input uppercase" required>
+      <input type="text" name="discount_text" value="Flat ₹100 off" class="astrae-input">
+      <div class="grid grid-cols-2 gap-3">
+        <input type="number" name="face_value" value="500" class="astrae-input" placeholder="Face value ₹">
+        <input type="number" name="days_until_expiry" value="30" class="astrae-input" placeholder="Days to expiry">
+      </div>
+      <button type="submit" class="btn-primary w-full">Add & verify</button>
+    </form>
+  </div>
+  <h3 class="font-bold mb-3">List from your wallet</h3>
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for coupon in my_coupons %}
+    {% if not coupon.is_for_sale %}
+    <div class="astrae-card p-5 border-dashed border-2 border-indigo/20">
+      <span class="font-bold">{{ coupon.platform }}</span>
+      <p class="mt-1 font-mono text-indigo">{{ coupon.coupon_code }}</p>
+      <form action="{% url 'sell_coupon' coupon.id %}" method="POST" class="mt-4 space-y-2">
+        {% csrf_token %}
+        <input type="number" name="price_in_points" value="50" min="10" class="astrae-input !h-10" placeholder="Price (PTS)">
+        <input type="number" name="face_value" value="500" class="astrae-input !h-10" placeholder="Face value">
+        <button type="submit" class="btn-primary w-full !h-10">List for sale</button>
+      </form>
+    </div>
+    {% endif %}
+    {% empty %}
+    <p class="text-muted col-span-full">No coupons to sell. Earn coupons from orders first.</p>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state"><p>Please <a href="{% url 'loginn' %}" class="text-indigo font-semibold">log in</a> to sell coupons.</p></div>
+  {% endif %}
+</div>
 
+<!-- MY COUPONS -->
+<div data-tab-panel="coupons" data-tab="mine" class="hidden">
+  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    {% for coupon in my_coupons %}
+    <div class="astrae-card p-5">
+      <div class="flex justify-between">
+        <span class="font-bold">{{ coupon.platform }}</span>
+        {% if coupon.is_demo %}<span class="badge badge-warning">Demo</span>{% endif %}
+      </div>
+      <p class="mt-2 font-mono text-lg font-bold text-indigo">{{ coupon.coupon_code }}</p>
+      <p class="text-sm text-success font-medium">{{ coupon.discount_text }}</p>
+      {% if coupon.is_for_sale %}
+      <span class="badge badge-indigo mt-3">Listed · {{ coupon.price_in_points }} PTS</span>
+      {% elif coupon.is_used %}
+      <span class="badge bg-slate-100 text-muted mt-3">Used</span>
+      {% else %}
+      <span class="badge badge-success mt-3">Active</span>
+      {% endif %}
+      {% if coupon.expiry_date %}<p class="mt-2 text-xs text-muted">Expires {{ coupon.expiry_date|date:"M d, Y" }}</p>{% endif %}
+    </div>
+    {% empty %}
+    <div class="col-span-full empty-state">
+      <div class="empty-state-icon">🎟️</div>
+      <p class="font-semibold">No coupons yet</p>
+      <p class="mt-1 text-sm text-muted">Complete orders to earn coupons or buy from the marketplace.</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-  function showCouponTab(tab) {
-    const panels = { mine: 'tab-panel-mine', add: 'tab-panel-add', market: 'tab-panel-market' };
-    const buttons = { mine: 'tab-btn-mine', add: 'tab-btn-add', market: 'tab-btn-market' };
-    Object.keys(panels).forEach(k => {
-      const el = document.getElementById(panels[k]);
-      if (el) el.classList.toggle('hidden', k !== tab);
-      const btn = document.getElementById(buttons[k]);
-      if (btn) btn.setAttribute('aria-selected', k === tab ? 'true' : 'false');
-    });
-  }
-</script>
+<script>document.addEventListener('DOMContentLoaded',function(){ASTRAE.initTabs('coupons');});</script>
 {% endblock %}

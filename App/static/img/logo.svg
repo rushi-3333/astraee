@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 40" fill="none">
+  <rect x="0" y="4" width="32" height="32" rx="8" fill="#0B1220"/>
+  <path d="M16 10L23 30H20.2L18.8 25.5H13.2L11.8 30H9L16 10Z" fill="url(#lg)"/>
+  <path d="M14.5 22H17.5L16 17.5L14.5 22Z" fill="#0B1220"/>
+  <circle cx="28" cy="10" r="3" fill="#06B6D4"/>
+  <text x="40" y="27" font-family="Plus Jakarta Sans, system-ui, sans-serif" font-size="20" font-weight="700" fill="#0F172A">ASTRAE</text>
+  <defs>
+    <linearGradient id="lg" x1="9" y1="10" x2="23" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+</svg>

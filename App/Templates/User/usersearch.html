@@ -1,289 +1,226 @@
 {% extends 'User/base_user.html' %}
-
-{% block title %}Unified Search — ASTRAE{% endblock %}
+{% block title %}Compare — ASTRAE{% endblock %}
 
 {% block content %}
-
-<div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-  <div>
-    <h1 class="font-display text-3xl font-bold">Unified Search</h1>
-    <p class="mt-1 text-muted-foreground">Compare every platform in one place — ASTRAE Score ranks best overall value.</p>
-  </div>
-  <span class="self-start rounded-full border border-warning/30 bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">Demo providers</span>
+<!-- Search header -->
+<div class="mb-8">
+  <h1 class="text-2xl sm:text-3xl font-bold">Compare Platforms</h1>
+  <p class="mt-1 text-muted">One search. Every option. Best value highlighted.</p>
 </div>
 
-<!-- Unified smart search -->
-<form method="GET" action="{% url 'usersearch' %}" class="mt-4 flex gap-2">
-  <input type="text" name="q" value="{{ q }}" placeholder='Smart search: "Pizza near me", "Groceries under ₹1000"'
-         class="h-11 flex-1 rounded-xl border border-input bg-surface px-4 text-sm focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-primary/40">
-  <button type="submit" class="h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground">Search</button>
+<!-- Smart search bar -->
+<form action="{% url 'usersearch' %}" method="GET" class="astrae-card p-4 sm:p-5 mb-6" data-loading="Comparing platforms...">
+  <div class="flex flex-col sm:flex-row gap-3">
+    <input type="text" name="q" value="{{ q }}" placeholder="Try: Uber from Hitech City to Gachibowli, Pizza near me, iPhone 16..."
+           class="astrae-input flex-1 !h-12">
+    <button type="submit" class="btn-primary !h-12 shrink-0">Search & Compare</button>
+  </div>
 </form>
 
-<!-- Category selector -->
-<div class="mt-6 -mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
-  {% for cat_slug, cat_label, cat_icon in categories_list %}
-  <a href="?category={{ cat_slug }}" class="min-w-[8rem] shrink-0">
-    <div class="h-full rounded-2xl border p-3 shadow-soft {% if active_category == cat_slug %}border-primary bg-primary/5{% else %}border-border bg-card card-hover{% endif %}">
-      <span class="text-xl">{{ cat_icon }}</span>
-      <p class="mt-1 text-xs font-semibold">{{ cat_label }}</p>
+<div class="grid gap-6 lg:grid-cols-[240px_1fr]">
+  <!-- Sidebar -->
+  <aside class="space-y-6">
+    <!-- Categories -->
+    <div class="astrae-card p-4">
+      <h3 class="text-sm font-bold mb-3">Categories</h3>
+      <div class="flex flex-wrap lg:flex-col gap-1">
+        {% for cat_slug, cat_label, cat_icon in categories_list %}
+        <a href="?category={{ cat_slug }}&q1={{ q1|urlencode }}&q2={{ q2|urlencode }}"
+           class="nav-item !text-xs {% if active_category == cat_slug %}active{% endif %}">
+          {{ cat_icon }} {{ cat_label }}
+        </a>
+        {% endfor %}
+      </div>
     </div>
-  </a>
-  {% endfor %}
-</div>
 
-<!-- Dynamic search form -->
-<div class="mt-6 rounded-2xl border border-border bg-card p-5 shadow-soft">
-  <form method="GET" action="{% url 'usersearch' %}" class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_auto] lg:items-end">
-    <input type="hidden" name="category" value="{{ active_category }}">
-
-    {% if active_category == 'ride' %}
-      <div class="space-y-2">
-        <label for="q1" class="text-sm font-medium leading-none">From</label>
-        <input type="text" id="q1" name="q1" value="{{ q1|default:'Hyderabad' }}" placeholder="Pickup location"
-               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/80
-                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-      </div>
-      <div class="space-y-2">
-        <label for="q2" class="text-sm font-medium leading-none">To</label>
-        <input type="text" id="q2" name="q2" value="{{ q2|default:'Airport' }}" placeholder="Destination"
-               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/80
-                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-      </div>
-    {% elif active_category == 'food' %}
-      <div class="space-y-2">
-        <label for="q1" class="text-sm font-medium leading-none">Location</label>
-        <input type="text" id="q1" name="q1" value="{{ q1|default:'Hyderabad' }}" placeholder="Your location"
-               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/80
-                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-      </div>
-      <div class="space-y-2">
-        <label for="q2" class="text-sm font-medium leading-none">Craving</label>
-        <input type="text" id="q2" name="q2" value="{{ q2|default:'Biryani for 2' }}" placeholder="Food or restaurant"
-               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/80
-                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-      </div>
-    {% elif active_category == 'shopping' %}
-      <div class="space-y-2">
-        <label for="q1" class="text-sm font-medium leading-none">Deliver to</label>
-        <input type="text" id="q1" name="q1" value="{{ q1|default:'Hyderabad' }}" placeholder="City / pincode"
-               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/80
-                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-      </div>
-      <div class="space-y-2">
-        <label for="q2" class="text-sm font-medium leading-none">Product</label>
-        <input type="text" id="q2" name="q2" value="{{ q2|default:'iPhone 15 128GB' }}" placeholder="Search products"
-               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/80
-                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-      </div>
-    {% elif active_category == 'medicine' %}
-      <div class="space-y-2">
-        <label for="q1" class="text-sm font-medium leading-none">Deliver to</label>
-        <input type="text" id="q1" name="q1" value="{{ q1|default:'Hyderabad' }}" placeholder="City / pincode"
-               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/80
-                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-      </div>
-      <div class="space-y-2">
-        <label for="q2" class="text-sm font-medium leading-none">Medicine</label>
-        <input type="text" id="q2" name="q2" value="{{ q2|default:'Paracetamol 650mg' }}" placeholder="Medicine or salt name"
-               class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground/80
-                      focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-      </div>
+    <!-- Recent searches -->
+    {% if user.is_authenticated %}
+    <div class="astrae-card p-4 hide-mobile">
+      <h3 class="text-sm font-bold mb-3">Recent Searches</h3>
+      {% for s in recent_searches %}
+      <a href="?category={{ s.category }}&q={{ s.query|urlencode }}" class="block text-sm text-muted hover:text-indigo py-1 truncate">{{ s.query|truncatechars:30 }}</a>
+      {% empty %}
+      <p class="text-xs text-muted">No recent searches</p>
+      {% endfor %}
+    </div>
     {% endif %}
 
-    <div class="space-y-2">
-      <label for="sort_by" class="text-sm font-medium leading-none">Sort by</label>
-      <select id="sort_by" name="sort_by"
-              class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground
-                     focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40 lg:w-48">
-        <option value="best_value" {% if sort_by == 'best_value' %}selected{% endif %}>Best overall value</option>
-        <option value="lowest_price" {% if sort_by == 'lowest_price' %}selected{% endif %}>Lowest price</option>
-        <option value="fastest" {% if sort_by == 'fastest' %}selected{% endif %}>Fastest</option>
-        <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Highest rating</option>
-      </select>
-    </div>
-
-    <button type="submit"
-            class="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/92">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
-      Compare
-    </button>
-  </form>
-</div>
-
-<!-- Sidebar + results -->
-<div class="mt-6 grid gap-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:items-start">
-
-  <!-- Filters (visual only — not yet wired to the view) -->
-  <aside class="rounded-2xl border border-border bg-card p-5 shadow-soft lg:sticky lg:top-24">
-    <h2 class="mb-5 flex items-center gap-2 font-display text-base font-bold">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>
-      Filters
-    </h2>
-
-    <div class="space-y-6">
-      <div class="space-y-3">
-        <div class="flex items-center justify-between">
-          <label for="filter-price" class="text-sm font-medium leading-none">Max price</label>
-          <span id="filter-price-val" class="text-sm font-semibold">₹5,000</span>
+    <!-- Filters -->
+    <div class="astrae-card p-4">
+      <h3 class="text-sm font-bold mb-3">Filters</h3>
+      <form method="GET" class="space-y-3">
+        <input type="hidden" name="category" value="{{ active_category }}">
+        <input type="hidden" name="q1" value="{{ q1 }}">
+        <input type="hidden" name="q2" value="{{ q2 }}">
+        <div>
+          <label class="text-xs font-medium text-muted">Sort by</label>
+          <select name="sort_by" class="astrae-input !h-10 mt-1" onchange="this.form.submit()">
+            <option value="best_value" {% if sort_by == 'best_value' %}selected{% endif %}>Best overall value</option>
+            <option value="lowest_price" {% if sort_by == 'lowest_price' %}selected{% endif %}>Lowest price</option>
+            <option value="fastest" {% if sort_by == 'fastest' %}selected{% endif %}>Fastest delivery</option>
+            <option value="rating" {% if sort_by == 'rating' %}selected{% endif %}>Highest rating</option>
+          </select>
         </div>
-        <input type="range" id="filter-price" min="100" max="50000" step="100" value="5000"
-               oninput="document.getElementById('filter-price-val').textContent = '₹' + Number(this.value).toLocaleString('en-IN')"
-               class="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-primary/20 accent-primary">
-      </div>
-
-      <!-- <div class="space-y-3">
-        <label class="text-sm font-medium leading-none">Minimum rating</label>
-        <div class="flex flex-wrap gap-2" id="rating-pills">
-          <button type="button" data-active="true" onclick="selectPill(this)"
-                  class="rating-pill h-9 rounded-lg px-3 text-[0.8125rem] font-medium transition-colors">Any</button>
-          <button type="button" data-active="false" onclick="selectPill(this)"
-                  class="rating-pill h-9 rounded-lg px-3 text-[0.8125rem] font-medium transition-colors">4+</button>
-          <button type="button" data-active="false" onclick="selectPill(this)"
-                  class="rating-pill h-9 rounded-lg px-3 text-[0.8125rem] font-medium transition-colors">4.3+</button>
-          <button type="button" data-active="false" onclick="selectPill(this)"
-                  class="rating-pill h-9 rounded-lg px-3 text-[0.8125rem] font-medium transition-colors">4.5+</button>
-        </div>
-      </div> -->
-
-      <!-- <div class="flex items-center justify-between gap-4">
-        <div class="min-w-0">
-          <label for="filter-coupon" class="text-sm font-medium leading-none">Has coupon only</label>
-          <p class="mt-0.5 text-xs text-muted-foreground">Hide options without an active offer.</p>
-        </div>
-        <input type="checkbox" id="filter-coupon" checked class="peer sr-only">
-        <label for="filter-coupon"
-               class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full bg-input transition-colors peer-checked:bg-primary">
-          <span class="pointer-events-none block size-4 translate-x-0.5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-[18px]"></span>
-        </label>
-      </div> -->
+      </form>
     </div>
   </aside>
 
   <!-- Results -->
   <div>
-    {% if highlights %}
-    <div class="mb-4 flex flex-wrap gap-2">
-      {% if highlights.best_price %}<span class="rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success">Best price: {{ highlights.best_price }}</span>{% endif %}
-      {% if highlights.fastest %}<span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Fastest: {{ highlights.fastest }}</span>{% endif %}
-      {% if highlights.best_rated %}<span class="rounded-full bg-warning/10 px-3 py-1 text-xs font-semibold text-warning">Best rated: {{ highlights.best_rated }}</span>{% endif %}
-      {% if highlights.best_overall %}<span class="rounded-full bg-foreground/10 px-3 py-1 text-xs font-semibold">Best value: {{ highlights.best_overall }}</span>{% endif %}
-    </div>
-    {% endif %}
-
-    {% if recommended %}
-    <div class="mb-5 flex flex-col gap-5 overflow-hidden rounded-2xl bg-gradient-brand p-6 text-white shadow-glow sm:flex-row sm:items-center sm:justify-between">
-      <div class="min-w-0">
-        <span class="inline-block rounded-full bg-white/20 px-2.5 py-1 text-[0.6875rem] font-semibold">✦ ASTRAE Recommended</span>
-        <h2 class="mt-2 font-display text-xl font-bold">{{ recommended.platform }}</h2>
-        <p class="mt-1 text-sm opacity-90">₹{{ recommended.final_price }} · {{ recommended.rating }}★ · {{ recommended.estimated_delivery|default:"—" }}</p>
-        {% if recommended.score_reasons %}
-        <ul class="mt-2 space-y-0.5 text-xs opacity-90">
-          {% for reason in recommended.score_reasons %}<li>• {{ reason }}</li>{% endfor %}
-        </ul>
-        {% endif %}
-
-        <div class="mt-4 flex flex-wrap gap-2">
-          <form action="{% url 'place_order' %}" method="POST">
-            {% csrf_token %}
-            <input type="hidden" name="platform" value="{{ recommended.platform }}">
-            <input type="hidden" name="category" value="{{ active_category }}">
-            <input type="hidden" name="item_title" value="{{ recommended.item_title }}">
-            <input type="hidden" name="final_price" value="{{ recommended.final_price }}">
-            <input type="hidden" name="original_price" value="{{ recommended.original_price }}">
-            <input type="hidden" name="discount" value="{{ recommended.discount|default:0 }}">
-            <input type="hidden" name="cashback" value="{{ recommended.cashback|default:0 }}">
-            <button type="submit" class="inline-flex h-10 items-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-foreground shadow-sm hover:bg-white/90">Book now →</button>
-          </form>
-          {% if user.is_authenticated %}
-          <form action="{% url 'add_to_wishlist' %}" method="POST">
-            {% csrf_token %}
-            <input type="hidden" name="title" value="{{ recommended.item_title }}">
-            <input type="hidden" name="platform" value="{{ recommended.platform }}">
-            <input type="hidden" name="category" value="{{ active_category }}">
-            <input type="hidden" name="current_price" value="{{ recommended.final_price }}">
-            <input type="hidden" name="next" value="{{ request.get_full_path }}">
-            <button type="submit" class="inline-flex h-10 items-center rounded-lg border border-white/40 px-4 text-sm font-semibold text-white hover:bg-white/10">♡ Save</button>
-          </form>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="mx-auto grid size-24 shrink-0 place-items-center rounded-full border-4 border-white/70 text-center">
+    <!-- Category-specific search form -->
+    <div class="astrae-card p-4 mb-6">
+      <form method="GET" action="{% url 'usersearch' %}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+        <input type="hidden" name="category" value="{{ active_category }}">
         <div>
-          <p class="font-display text-2xl font-bold leading-none">{{ recommended.astrae_score|default:"—" }}</p>
-          <p class="mt-1 text-[0.5625rem] uppercase tracking-wide opacity-80">ASTRAE Score</p>
+          <label class="text-xs font-medium text-muted">{% if active_category == 'ride' %}From{% else %}Location{% endif %}</label>
+          <input type="text" name="q1" value="{{ q1 }}" class="astrae-input !h-10 mt-1">
+        </div>
+        <div>
+          <label class="text-xs font-medium text-muted">{% if active_category == 'ride' %}To{% else %}Query{% endif %}</label>
+          <input type="text" name="q2" value="{{ q2 }}" class="astrae-input !h-10 mt-1">
+        </div>
+        <button type="submit" class="btn-primary !h-10 sm:col-span-2 lg:col-span-1">Compare</button>
+      </form>
+    </div>
+
+    {% if highlights %}
+    <div class="flex flex-wrap gap-2 mb-4">
+      {% if highlights.best_price %}<span class="badge badge-success">Best price: {{ highlights.best_price }}</span>{% endif %}
+      {% if highlights.fastest %}<span class="badge badge-cyan">Fastest: {{ highlights.fastest }}</span>{% endif %}
+      {% if highlights.best_rated %}<span class="badge badge-indigo">Top rated: {{ highlights.best_rated }}</span>{% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ASTRAE Recommended -->
+    {% if recommended %}
+    <div class="relative overflow-hidden rounded-2xl hero-gradient text-white p-6 mb-6 shadow-elevated">
+      <div class="hero-glow absolute inset-0"></div>
+      <div class="relative flex flex-col lg:flex-row lg:items-center gap-6">
+        <div class="flex-1">
+          <span class="badge !bg-white/20 !text-white">ASTRAE Recommended</span>
+          <h2 class="mt-3 text-2xl font-bold">{{ recommended.platform }}</h2>
+          <p class="mt-1 text-slate-300">{{ recommended.item_title|truncatechars:50 }}</p>
+          <div class="mt-4 flex flex-wrap gap-4 text-sm">
+            <span><strong class="text-white text-lg">₹{{ recommended.final_price }}</strong></span>
+            <span>★ {{ recommended.rating }}</span>
+            <span>{{ recommended.estimated_delivery|default:"—" }}</span>
+            {% if recommended.cashback %}<span class="text-cyan-light">₹{{ recommended.cashback }} cashback</span>{% endif %}
+          </div>
+          {% if recommended.score_reasons %}
+          <ul class="mt-4 space-y-1 text-sm text-slate-300">
+            {% for reason in recommended.score_reasons %}
+            <li>✓ {{ reason }}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          <div class="mt-5 flex flex-wrap gap-2">
+            <form action="{% url 'place_order' %}" method="POST" data-loading="Booking...">
+              {% csrf_token %}
+              <input type="hidden" name="platform" value="{{ recommended.platform }}">
+              <input type="hidden" name="category" value="{{ active_category }}">
+              <input type="hidden" name="item_title" value="{{ recommended.item_title }}">
+              <input type="hidden" name="final_price" value="{{ recommended.final_price }}">
+              <input type="hidden" name="original_price" value="{{ recommended.original_price }}">
+              <input type="hidden" name="cashback" value="{{ recommended.cashback|default:0 }}">
+              <button type="submit" class="btn-primary !bg-white !text-indigo hover:!bg-slate-100">Book now</button>
+            </form>
+            {% if user.is_authenticated %}
+            <form action="{% url 'add_to_wishlist' %}" method="POST">
+              {% csrf_token %}
+              <input type="hidden" name="title" value="{{ recommended.item_title }}">
+              <input type="hidden" name="platform" value="{{ recommended.platform }}">
+              <input type="hidden" name="category" value="{{ active_category }}">
+              <input type="hidden" name="current_price" value="{{ recommended.final_price }}">
+              <button type="submit" class="btn-secondary !border-white/30 !text-white !bg-white/10">Save</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+        <div class="score-ring mx-auto lg:mx-0 shrink-0">
+          <div class="text-center">
+            <p class="text-3xl font-bold">{{ recommended.astrae_score|default:"—" }}</p>
+            <p class="text-[0.625rem] uppercase tracking-wider opacity-80">ASTRAE Score</p>
+          </div>
         </div>
       </div>
     </div>
     {% endif %}
 
-    <p class="mb-3 text-sm text-muted-foreground">Showing {{ total_count }} platform options</p>
+    <p class="text-sm text-muted mb-4">{{ total_count }} platform option{{ total_count|pluralize }} found</p>
 
-    <div class="grid gap-4 sm:grid-cols-2">
+    {% if recommended or results %}
+    <!-- Desktop comparison table header -->
+    <div class="astrae-card overflow-hidden mb-4 hide-mobile">
+      <div class="compare-row !font-semibold !text-muted !text-xs uppercase !bg-slate-50">
+        <span>Platform</span><span>Price</span><span>Discount</span><span>Cashback</span><span>ETA</span><span>Rating</span><span>Score</span><span></span>
+      </div>
+      {% if recommended %}
+      <div class="compare-row recommended">
+        <span class="font-bold">{{ recommended.platform }}</span>
+        <span class="font-bold">₹{{ recommended.final_price }}</span>
+        <span>₹{{ recommended.discount|default:0 }}</span>
+        <span>{% if recommended.cashback %}₹{{ recommended.cashback }}{% else %}—{% endif %}</span>
+        <span>{{ recommended.eta_mins|default:"—" }} min</span>
+        <span>★ {{ recommended.rating }}</span>
+        <span class="badge badge-indigo">{{ recommended.astrae_score }}/100</span>
+        <span class="badge badge-success">Best</span>
+      </div>
+      {% endif %}
       {% for item in results %}
-      <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
-        <div class="mb-3 flex items-center justify-between">
-          <span class="font-semibold">{{ item.platform }}</span>
-          <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">{{ item.astrae_score|default:"—" }}/100</span>
-        </div>
-        <p class="mb-2 text-xs text-muted-foreground">{{ item.item_title|truncatechars:35 }}</p>
-        <div class="flex items-baseline gap-2">
-          <span class="font-display text-2xl font-bold">₹{{ item.final_price }}</span>
-          {% if item.original_price > item.final_price %}
-            <span class="text-sm text-muted-foreground line-through">₹{{ item.original_price }}</span>
-          {% endif %}
-        </div>
-        <div class="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-          <span>★ {{ item.rating }}</span>
-          <span>{{ item.estimated_delivery|default:"—" }}</span>
-          {% if item.cashback %}<span class="text-success">₹{{ item.cashback }} CB</span>{% endif %}
-        </div>
+      <div class="compare-row">
+        <span class="font-semibold">{{ item.platform }}</span>
+        <span class="font-bold">₹{{ item.final_price }}</span>
+        <span>₹{{ item.discount|default:0 }}</span>
+        <span>{% if item.cashback %}₹{{ item.cashback }}{% else %}—{% endif %}</span>
+        <span>{{ item.eta_mins|default:"—" }} min</span>
+        <span>★ {{ item.rating }}</span>
+        <span class="font-semibold text-indigo">{{ item.astrae_score|default:"—" }}</span>
+        <form action="{% url 'place_order' %}" method="POST">
+          {% csrf_token %}
+          <input type="hidden" name="platform" value="{{ item.platform }}">
+          <input type="hidden" name="category" value="{{ active_category }}">
+          <input type="hidden" name="item_title" value="{{ item.item_title }}">
+          <input type="hidden" name="final_price" value="{{ item.final_price }}">
+          <button type="submit" class="btn-primary !h-8 !text-xs !px-3">Select</button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
 
+    <!-- Mobile cards -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:hidden">
+      {% for item in results %}
+      <div class="astrae-card p-5">
+        <div class="flex justify-between items-start">
+          <span class="font-bold">{{ item.platform }}</span>
+          <span class="badge badge-indigo">{{ item.astrae_score }}/100</span>
+        </div>
+        <p class="text-xs text-muted mt-1 truncate">{{ item.item_title }}</p>
+        <p class="mt-3 text-2xl font-bold">₹{{ item.final_price }}</p>
+        <div class="mt-2 flex gap-3 text-xs text-muted">
+          <span>★ {{ item.rating }}</span>
+          <span>{{ item.eta_mins }} min</span>
+        </div>
         <form action="{% url 'place_order' %}" method="POST" class="mt-4">
           {% csrf_token %}
           <input type="hidden" name="platform" value="{{ item.platform }}">
           <input type="hidden" name="category" value="{{ active_category }}">
           <input type="hidden" name="item_title" value="{{ item.item_title }}">
           <input type="hidden" name="final_price" value="{{ item.final_price }}">
-          <input type="hidden" name="original_price" value="{{ item.original_price }}">
-          <button type="submit" class="h-10 w-full rounded-lg bg-secondary text-sm font-semibold text-secondary-foreground hover:bg-primary hover:text-primary-foreground">
-            Select {{ item.platform }} →
-          </button>
+          <button type="submit" class="btn-primary w-full !h-10">Select</button>
         </form>
-        {% if user.is_authenticated %}
-        <form action="{% url 'add_to_wishlist' %}" method="POST" class="mt-2">
-          {% csrf_token %}
-          <input type="hidden" name="title" value="{{ item.item_title }}">
-          <input type="hidden" name="platform" value="{{ item.platform }}">
-          <input type="hidden" name="category" value="{{ active_category }}">
-          <input type="hidden" name="current_price" value="{{ item.final_price }}">
-          <input type="hidden" name="item_type" value="product">
-          <input type="hidden" name="next" value="{{ request.get_full_path }}">
-          <button type="submit" class="h-8 w-full rounded-lg border border-border text-xs font-semibold text-muted-foreground hover:bg-secondary">♡ Add to wishlist</button>
-        </form>
-        {% endif %}
       </div>
-      {% empty %}
-      <p class="col-span-full py-10 text-center text-sm text-muted-foreground">
-        No comparison results found. Try running a query above.
-      </p>
       {% endfor %}
     </div>
+
+    {% if not recommended and not results %}
+    <div class="empty-state">
+      <div class="empty-state-icon">🔍</div>
+      <p class="font-semibold text-lg">No results yet</p>
+      <p class="mt-1 text-sm text-muted">Enter a search above to compare platforms.</p>
+    </div>
+    {% endif %}
   </div>
 </div>
-
-<style>
-  .rating-pill[data-active="true"] { background: #575ECF; color: #ffffff; }
-  .rating-pill[data-active="false"] { background: #ffffff; border: 1px solid #e6e3dd; color: #1c1b19; }
-</style>
-
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-  function selectPill(el) {
-    document.querySelectorAll('#rating-pills .rating-pill').forEach(p => p.setAttribute('data-active', 'false'));
-    el.setAttribute('data-active', 'true');
-  }
-</script>
 {% endblock %}

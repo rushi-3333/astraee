@@ -1,85 +1,67 @@
 {% extends 'User/base_user.html' %}
-
-{% block title %}Rewards Dashboard — ASTRAE{% endblock %}
+{% block title %}Rewards — ASTRAE{% endblock %}
 
 {% block content %}
-
-<h1 class="font-display text-3xl font-bold">Rewards Dashboard</h1>
-<p class="mt-1 text-muted-foreground">Track your cashback points, lucky order drops (1 – 10,000 PTS), and marketplace transactions.</p>
-
-<!-- Wallet summary -->
-{% if wallet %}
-<div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-  <div class="rounded-2xl border border-border bg-card p-4 shadow-soft">
-    <p class="text-xs text-muted-foreground">Available points</p>
-    <p class="font-display text-xl font-bold text-primary">⚡ {{ wallet.reward_points|default:total_points }}</p>
-  </div>
-  <div class="rounded-2xl border border-border bg-card p-4 shadow-soft">
-    <p class="text-xs text-muted-foreground">Pending</p>
-    <p class="font-display text-xl font-bold">{{ pending_points|default:0 }}</p>
-  </div>
-  <div class="rounded-2xl border border-border bg-card p-4 shadow-soft">
-    <p class="text-xs text-muted-foreground">Redeemed</p>
-    <p class="font-display text-xl font-bold">{{ redeemed_points|default:0 }}</p>
-  </div>
-  <div class="rounded-2xl border border-border bg-card p-4 shadow-soft">
-    <p class="text-xs text-muted-foreground">Marketplace earnings</p>
-    <p class="font-display text-xl font-bold text-success">{{ wallet.marketplace_earnings|default:0 }} PTS</p>
-  </div>
+<div class="mb-8">
+  <h1 class="text-2xl sm:text-3xl font-bold">Rewards</h1>
+  <p class="mt-1 text-muted">Earn points on every action. Redeem for marketplace purchases.</p>
 </div>
-{% endif %}
 
 <!-- Stats -->
-<div class="mt-6 grid gap-4 sm:grid-cols-2">
-  <div class="overflow-hidden rounded-2xl bg-gradient-brand p-6 text-white shadow-glow">
-    <p class="text-sm opacity-85">Total reward points balance</p>
-    <p class="mt-2 font-display text-3xl font-bold">⚡ {{ total_points }} PTS</p>
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+  <div class="astrae-card p-5 border-l-4 border-l-indigo">
+    <p class="text-xs font-medium text-muted uppercase">Total Points</p>
+    <p class="mt-2 text-3xl font-bold text-indigo">⚡ {{ total_points }}</p>
   </div>
-  <div class="rounded-2xl border border-border bg-card p-6 shadow-soft">
-    <p class="text-sm text-muted-foreground">Bookings completed</p>
-    <p class="mt-2 font-display text-3xl font-bold text-success">{{ total_orders }}</p>
+  <div class="astrae-card p-5">
+    <p class="text-xs font-medium text-muted uppercase">Available</p>
+    <p class="mt-2 text-3xl font-bold">{{ wallet.reward_points|default:total_points }}</p>
+  </div>
+  <div class="astrae-card p-5">
+    <p class="text-xs font-medium text-muted uppercase">Pending</p>
+    <p class="mt-2 text-3xl font-bold text-warning">{{ pending_points|default:0 }}</p>
+  </div>
+  <div class="astrae-card p-5">
+    <p class="text-xs font-medium text-muted uppercase">Redeemed</p>
+    <p class="mt-2 text-3xl font-bold text-muted">{{ redeemed_points|default:0 }}</p>
   </div>
 </div>
 
-<!-- Points history -->
-<div class="mt-6 rounded-2xl border border-border bg-card p-5 shadow-soft">
-  <h2 class="mb-4 flex items-center gap-2 font-display text-base font-bold">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><circle cx="12" cy="12" r="10"/><path d="M12 6v6h4"/></svg>
-    Points History
-  </h2>
+<!-- Ways to earn -->
+<div class="astrae-card p-6 mb-10">
+  <h2 class="font-bold mb-4">Ways to earn more</h2>
+  <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Complete orders</strong><p class="text-muted mt-1">+20 pts per booking</p></div>
+    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Sell coupons</strong><p class="text-muted mt-1">+15 pts bonus</p></div>
+    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Daily activity</strong><p class="text-muted mt-1">+5 pts login</p></div>
+    <div class="rounded-xl bg-slate-50 p-4 text-sm"><strong>Referrals</strong><p class="text-muted mt-1">+50 pts</p></div>
+  </div>
+</div>
 
+<!-- History -->
+<div class="astrae-card overflow-hidden">
+  <div class="p-5 border-b border-border">
+    <h2 class="font-bold">Reward History</h2>
+  </div>
   <div class="overflow-x-auto">
-    <table class="w-full border-collapse text-sm">
-      <thead>
-        <tr class="border-b border-border">
-          <th class="px-3 py-2.5 text-left text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">Date &amp; time</th>
-          <th class="px-3 py-2.5 text-left text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">Transaction description</th>
-          <th class="px-3 py-2.5 text-right text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">Points change</th>
-        </tr>
+    <table class="w-full text-sm">
+      <thead class="bg-slate-50 text-xs uppercase text-muted">
+        <tr><th class="px-5 py-3 text-left">Date</th><th class="px-5 py-3 text-left">Activity</th><th class="px-5 py-3 text-right">Points</th></tr>
       </thead>
       <tbody>
         {% for r in reward_history %}
-        <tr class="border-b border-border last:border-0">
-          <td class="px-3 py-3 text-muted-foreground">{{ r.created_at|date:"M d, Y H:i" }}</td>
-          <td class="px-3 py-3 font-medium">{{ r.description }}</td>
-          <td class="px-3 py-3 text-right font-bold">
-            {% if r.points_earned > 0 %}
-              <span class="text-success">+{{ r.points_earned }} PTS</span>
-            {% else %}
-              <span class="text-destructive">{{ r.points_earned }} PTS</span>
-            {% endif %}
+        <tr class="border-t border-border">
+          <td class="px-5 py-4 text-muted whitespace-nowrap">{{ r.created_at|date:"M d, Y" }}</td>
+          <td class="px-5 py-4">{{ r.description }}</td>
+          <td class="px-5 py-4 text-right font-bold {% if r.points_earned > 0 %}text-success{% else %}text-destructive{% endif %}">
+            {% if r.points_earned > 0 %}+{% endif %}{{ r.points_earned }}
           </td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="3" class="px-3 py-10 text-center text-sm text-muted-foreground">
-            No reward points history recorded yet. Place an order to earn up to 10,000 PTS!
-          </td>
-        </tr>
+        <tr><td colspan="3" class="px-5 py-12 text-center text-muted">No reward history yet. Place an order to start earning!</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 </div>
-
 {% endblock %}

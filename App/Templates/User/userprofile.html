@@ -1,121 +1,78 @@
 {% extends 'User/base_user.html' %}
-
-{% block title %}My Profile — ASTRAE{% endblock %}
+{% block title %}Profile — ASTRAE{% endblock %}
 
 {% block content %}
-
-<h1 class="font-display text-3xl font-bold">My Profile</h1>
-<p class="mt-1 text-muted-foreground">Manage your account details and registration information.</p>
-
-{% if messages %}
-  <div class="mt-5 space-y-2">
-    {% for message in messages %}
-      <div class="rounded-lg border border-success/30 bg-success/10 px-3 py-2.5 text-sm text-success">
-        {{ message }}
-      </div>
-    {% endfor %}
-  </div>
-{% endif %}
-
-<div class="mt-6 grid gap-6 lg:grid-cols-[300px_1fr] lg:items-start">
-
-  <!-- Account summary -->
-  <div class="rounded-2xl border border-border bg-card p-6 text-center shadow-soft">
-    <span class="mx-auto grid size-20 place-items-center rounded-full bg-gradient-brand font-display text-3xl font-bold text-white shadow-glow">
-      {{ user.username|slice:":1"|upper }}
-    </span>
-    <p class="mt-4 font-display text-xl font-bold">{{ user.first_name|default:user.username }} {{ user.last_name }}</p>
-    <p class="mt-1 text-sm text-muted-foreground">@{{ user.username }}</p>
-    <span class="mt-3 inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/10 px-3 py-1 text-xs font-semibold text-success">
-      <span class="size-1.5 rounded-full bg-success"></span>
-      Active Member
-    </span>
-
-    <div class="mt-6 space-y-3 border-t border-border pt-5 text-left">
-      <div class="flex items-center justify-between text-sm">
-        <span class="text-muted-foreground">Joined on</span>
-        <span class="font-semibold">{{ user.date_joined|date:"M d, Y" }}</span>
-      </div>
-      <div class="flex items-center justify-between text-sm">
-        <span class="text-muted-foreground">Total orders</span>
-        <span class="font-semibold text-success">{{ total_orders }}</span>
-      </div>
-      <div class="flex items-center justify-between text-sm">
-        <span class="text-muted-foreground">Reward points</span>
-        <span class="font-semibold text-primary">⚡ {{ total_points }}</span>
-      </div>
-      <div class="flex items-center justify-between text-sm">
-        <span class="text-muted-foreground">Active coupons</span>
-        <span class="font-semibold">{{ active_coupons }}</span>
-      </div>
+<div class="grid gap-8 lg:grid-cols-[280px_1fr]">
+  <!-- Sidebar -->
+  <aside class="space-y-2">
+    <div class="astrae-card p-6 text-center">
+      <span class="inline-flex size-16 items-center justify-center rounded-full bg-indigo text-white text-2xl font-bold">
+        {{ user.first_name|default:user.username|slice:":1"|upper }}
+      </span>
+      <p class="mt-3 font-bold text-lg">{{ user.first_name|default:user.username }}</p>
+      <p class="text-sm text-muted">@{{ user.username }}</p>
+      <span class="badge badge-success mt-2">Active</span>
     </div>
-  </div>
+    <nav class="astrae-card p-2 space-y-0.5">
+      <a href="#info" class="nav-item active w-full">Personal Info</a>
+      <a href="{% url 'userorders' %}" class="nav-item w-full">Orders</a>
+      <a href="{% url 'userwishlist' %}" class="nav-item w-full">Wishlist</a>
+      <a href="{% url 'usercoupons' %}" class="nav-item w-full">Coupons</a>
+      <a href="{% url 'userrewards' %}" class="nav-item w-full">Rewards</a>
+      <a href="{% url 'usersavings' %}" class="nav-item w-full">Savings</a>
+      <a href="{% url 'useralerts' %}" class="nav-item w-full">Price Alerts</a>
+      <a href="{% url 'usernotifications' %}" class="nav-item w-full">Notifications</a>
+      <a href="{% url 'user_logout' %}" class="nav-item w-full !text-destructive">Logout</a>
+    </nav>
+    <div class="astrae-card p-4 grid grid-cols-2 gap-3 text-center text-sm">
+      <div><p class="font-bold text-indigo">{{ total_points }}</p><p class="text-xs text-muted">Points</p></div>
+      <div><p class="font-bold">{{ total_orders }}</p><p class="text-xs text-muted">Orders</p></div>
+    </div>
+  </aside>
 
-  <!-- Edit profile form -->
-  <div class="rounded-2xl border border-border bg-card p-6 shadow-soft">
-    <h2 class="border-b border-border pb-3 font-display text-lg font-bold">Edit Registration Details</h2>
-
-    <form action="{% url 'update_profile' %}" method="POST" class="mt-5">
+  <!-- Main form -->
+  <div id="info" class="astrae-card p-6 sm:p-8">
+    <h1 class="text-xl font-bold mb-6">Personal Information</h1>
+    <form action="{% url 'update_profile' %}" method="POST" class="space-y-5 max-w-lg">
       {% csrf_token %}
-
       <div class="grid gap-4 sm:grid-cols-2">
-        <div class="space-y-2">
-          <label class="text-sm font-medium leading-none text-muted-foreground">Username (read-only)</label>
-          <input type="text" value="{{ user.username }}" disabled
-                 class="h-10 w-full cursor-not-allowed rounded-lg border border-input bg-secondary/60 px-3 text-sm text-muted-foreground">
+        <div>
+          <label class="text-sm font-medium text-muted">First name</label>
+          <input type="text" name="first_name" value="{{ user.first_name }}" class="astrae-input mt-1">
         </div>
-
-        <div class="space-y-2">
-          <label for="email" class="text-sm font-medium leading-none">Email address</label>
-          <input type="email" id="email" name="email" value="{{ user.email }}" required
-                 class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground
-                        focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-        </div>
-
-        <div class="space-y-2">
-          <label for="first_name" class="text-sm font-medium leading-none">First name</label>
-          <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}"
-                 class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground
-                        focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-        </div>
-
-        <div class="space-y-2">
-          <label for="last_name" class="text-sm font-medium leading-none">Last name</label>
-          <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}"
-                 class="h-10 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground
-                        focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-        </div>
-
-        <div class="space-y-2 sm:col-span-2">
-          <label for="new_password" class="text-sm font-medium leading-none">New password</label>
-          <div class="relative">
-            <input type="password" id="new_password" name="new_password" placeholder="Leave blank to keep current password"
-                   class="h-10 w-full rounded-lg border border-input bg-surface px-3 pr-11 text-sm text-foreground placeholder:text-muted-foreground/80
-                          focus-visible:border-primary focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-primary/40">
-            <button type="button" onclick="togglePassword('new_password')" aria-label="Show password"
-                    class="absolute top-1/2 right-1 -translate-y-1/2 grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
-              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
+        <div>
+          <label class="text-sm font-medium text-muted">Last name</label>
+          <input type="text" name="last_name" value="{{ user.last_name }}" class="astrae-input mt-1">
         </div>
       </div>
+      <div>
+        <label class="text-sm font-medium text-muted">Email</label>
+        <input type="email" name="email" value="{{ user.email }}" class="astrae-input mt-1">
+      </div>
+      <div>
+        <label class="text-sm font-medium text-muted">Phone</label>
+        <input type="text" name="phone" value="{{ preferences.phone }}" class="astrae-input mt-1">
+      </div>
+      <div>
+        <label class="text-sm font-medium text-muted">Address</label>
+        <textarea name="address" rows="2" class="astrae-input mt-1 !h-auto py-2">{{ preferences.address }}</textarea>
+      </div>
 
-      <button type="submit"
-              class="mt-6 h-10 rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/92 active:bg-primary/88">
-        Save profile changes
-      </button>
+      <hr class="border-border">
+      <h2 class="font-bold">Notification Settings</h2>
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notify_price_drops" {% if preferences.notify_price_drops %}checked{% endif %}> Price drop alerts</label>
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notify_coupon_expiry" {% if preferences.notify_coupon_expiry %}checked{% endif %}> Coupon expiry reminders</label>
+      <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="notify_deals" {% if preferences.notify_deals %}checked{% endif %}> New deals</label>
+
+      <hr class="border-border">
+      <h2 class="font-bold">Security</h2>
+      <div>
+        <label class="text-sm font-medium text-muted">New password (leave blank to keep current)</label>
+        <input type="password" name="new_password" class="astrae-input mt-1" autocomplete="new-password">
+      </div>
+
+      <button type="submit" class="btn-primary">Save changes</button>
     </form>
   </div>
-
 </div>
-
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-  function togglePassword(inputId) {
-    const input = document.getElementById(inputId);
-    input.type = input.type === 'password' ? 'text' : 'password';
-  }
-</script>
 {% endblock %}

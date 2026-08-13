@@ -1,88 +1,68 @@
 {% extends 'User/base_user.html' %}
-
 {% block title %}Orders — ASTRAE{% endblock %}
 
 {% block content %}
-
-<h1 class="font-display text-3xl font-bold">Order History</h1>
-<p class="mt-1 text-muted-foreground">Track bookings from search → selection → completion across all platforms.</p>
-
-{% if messages %}
-<div class="mt-5 space-y-2">
-  {% for message in messages %}
-  <div class="rounded-lg border border-success/30 bg-success/10 px-3 py-2.5 text-sm text-success">{{ message }}</div>
-  {% endfor %}
+<div class="flex flex-wrap items-start justify-between gap-4 mb-8">
+  <div>
+    <h1 class="text-2xl sm:text-3xl font-bold">Orders</h1>
+    <p class="mt-1 text-muted">Track bookings and savings across platforms.</p>
+  </div>
+  <form method="GET" class="flex gap-2">
+    <select name="status" onchange="this.form.submit()" class="astrae-input !h-10 !w-auto">
+      <option value="">All status</option>
+      <option value="completed" {% if active_status == 'completed' %}selected{% endif %}>Completed</option>
+      <option value="confirmed" {% if active_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+      <option value="in_progress" {% if active_status == 'in_progress' %}selected{% endif %}>In Progress</option>
+    </select>
+  </form>
 </div>
-{% endif %}
 
-<!-- Filters -->
-<form method="GET" class="mt-6 flex flex-wrap gap-3">
-  <select name="status" onchange="this.form.submit()"
-          class="h-9 rounded-lg border border-input bg-surface px-3 text-sm">
-    <option value="">All statuses</option>
-    <option value="completed" {% if active_status == 'completed' %}selected{% endif %}>Completed</option>
-    <option value="confirmed" {% if active_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
-    <option value="in_progress" {% if active_status == 'in_progress' %}selected{% endif %}>In Progress</option>
-    <option value="cancelled" {% if active_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
-  </select>
-  <select name="category" onchange="this.form.submit()"
-          class="h-9 rounded-lg border border-input bg-surface px-3 text-sm">
-    <option value="">All categories</option>
-    <option value="ride" {% if active_category == 'ride' %}selected{% endif %}>Rides</option>
-    <option value="food" {% if active_category == 'food' %}selected{% endif %}>Food</option>
-    <option value="grocery" {% if active_category == 'grocery' %}selected{% endif %}>Grocery</option>
-    <option value="shopping" {% if active_category == 'shopping' %}selected{% endif %}>Shopping</option>
-    <option value="medicine" {% if active_category == 'medicine' %}selected{% endif %}>Medicine</option>
-  </select>
-</form>
-
-<div class="mt-6 space-y-4">
+<div class="space-y-4">
   {% for order in orders %}
-  <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
-    <div class="flex flex-wrap items-start justify-between gap-3">
+  <article class="astrae-card p-5 sm:p-6">
+    <div class="flex flex-wrap justify-between gap-4">
       <div>
-        <div class="flex items-center gap-2">
-          <span class="font-semibold">{{ order.platform }}</span>
-          <span class="rounded-md bg-secondary px-2 py-0.5 text-[0.6875rem] font-semibold uppercase">{{ order.category }}</span>
-          <span class="rounded-md px-2 py-0.5 text-[0.6875rem] font-semibold
-            {% if order.status == 'completed' %}bg-success/10 text-success
-            {% elif order.status == 'cancelled' %}bg-destructive/10 text-destructive
-            {% else %}bg-primary/10 text-primary{% endif %}">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-bold text-lg">{{ order.platform }}</span>
+          <span class="badge bg-slate-100 text-muted">{{ order.category }}</span>
+          <span class="badge {% if order.status == 'completed' %}badge-success{% elif order.status == 'cancelled' %}bg-red-50 text-destructive{% else %}badge-indigo{% endif %}">
             {{ order.get_status_display }}
           </span>
         </div>
-        <p class="mt-1 text-sm text-muted-foreground">{{ order.item_title }}</p>
-        <p class="mt-1 text-xs text-muted-foreground">{{ order.created_at|date:"M d, Y H:i" }}</p>
+        <p class="mt-2 text-muted">{{ order.item_title }}</p>
+        <p class="mt-1 text-xs text-muted">{{ order.created_at|date:"M d, Y · H:i" }}</p>
       </div>
       <div class="text-right">
-        <p class="font-display text-xl font-bold">₹{{ order.final_price }}</p>
-        {% if order.original_price %}
-        <p class="text-xs text-muted-foreground line-through">₹{{ order.original_price }}</p>
-        {% endif %}
+        <p class="text-2xl font-bold">₹{{ order.final_price }}</p>
+        {% if order.astrae_savings %}<p class="text-sm text-success font-medium">Saved ₹{{ order.astrae_savings }}</p>{% endif %}
       </div>
     </div>
 
-    <div class="mt-4 grid gap-2 border-t border-border pt-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-      {% if order.discount %}<div><span class="text-muted-foreground">Discount:</span> ₹{{ order.discount }}</div>{% endif %}
-      {% if order.coupon_applied %}<div><span class="text-muted-foreground">Coupon:</span> {{ order.coupon_applied }}</div>{% endif %}
-      {% if order.cashback %}<div><span class="text-muted-foreground">Cashback:</span> ₹{{ order.cashback }}</div>{% endif %}
-      {% if order.astrae_savings %}<div><span class="text-muted-foreground">ASTRAE Savings:</span> <span class="font-semibold text-success">₹{{ order.astrae_savings }}</span></div>{% endif %}
+    <!-- Timeline -->
+    <div class="timeline mt-6 ml-2">
+      <div class="timeline-step done"><p class="text-xs font-semibold">Searching</p></div>
+      <div class="timeline-step done"><p class="text-xs font-semibold">Selected · {{ order.platform }}</p></div>
+      <div class="timeline-step {% if order.status == 'completed' %}done{% elif order.status == 'in_progress' or order.status == 'confirmed' %}active{% endif %}">
+        <p class="text-xs font-semibold">{{ order.get_status_display }}</p>
+      </div>
+      {% if order.status == 'completed' %}
+      <div class="timeline-step done"><p class="text-xs font-semibold text-success">Completed · Rewards earned</p></div>
+      {% endif %}
     </div>
 
-    <div class="mt-4">
-      <a href="{% url 'usersearch' %}?category={{ order.category }}"
-         class="inline-flex h-8 items-center rounded-lg bg-secondary px-3 text-xs font-semibold transition-colors hover:bg-primary hover:text-primary-foreground">
-        Re-book on {{ order.platform }} →
-      </a>
+    <div class="mt-4 flex flex-wrap gap-4 text-sm text-muted border-t border-border pt-4">
+      {% if order.discount %}<span>Discount ₹{{ order.discount }}</span>{% endif %}
+      {% if order.cashback %}<span>Cashback ₹{{ order.cashback }}</span>{% endif %}
+      {% if order.coupon_applied %}<span>Coupon {{ order.coupon_applied }}</span>{% endif %}
     </div>
-  </div>
+  </article>
   {% empty %}
-  <div class="rounded-2xl border border-dashed border-border bg-card py-16 text-center">
-    <p class="text-lg font-semibold">No orders yet</p>
-    <p class="mt-2 text-sm text-muted-foreground">Search and compare platforms, then book your best option to start earning rewards.</p>
-    <a href="{% url 'usersearch' %}" class="mt-4 inline-flex h-10 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground">Start comparing →</a>
+  <div class="empty-state">
+    <div class="empty-state-icon">📦</div>
+    <p class="font-semibold text-lg">No orders yet</p>
+    <p class="mt-1 text-sm text-muted">Compare platforms and book your best option to get started.</p>
+    <a href="{% url 'usersearch' %}" class="btn-primary mt-4 inline-flex">Start comparing</a>
   </div>
   {% endfor %}
 </div>
-
 {% endblock %}

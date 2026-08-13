@@ -1,99 +1,79 @@
 {% extends 'User/base_user.html' %}
-
-{% block title %}Savings Dashboard — ASTRAE{% endblock %}
-
-{% block extra_head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-{% endblock %}
+{% block title %}Savings — ASTRAE{% endblock %}
+{% block extra_head %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
 
 {% block content %}
+<div class="mb-8">
+  <h1 class="text-2xl sm:text-3xl font-bold">Your Savings</h1>
+  <p class="mt-1 text-muted">Track every rupee saved through ASTRAE.</p>
+</div>
 
-<h1 class="font-display text-3xl font-bold">Savings Dashboard</h1>
-<p class="mt-1 text-muted-foreground">Your complete savings story — spending, coupons, cashback, rewards, and marketplace earnings.</p>
+<!-- Hero savings -->
+<div class="astrae-card hero-gradient text-white p-8 mb-8 text-center">
+  <p class="text-cyan-light text-sm font-medium">Total saved with ASTRAE</p>
+  <p class="mt-2 text-4xl sm:text-5xl font-bold">₹{{ total_saved|floatformat:0 }}</p>
+  <p class="mt-2 text-slate-300 text-sm">You saved ₹{{ total_saved|floatformat:0 }} across all your comparisons and deals.</p>
+</div>
 
-<!-- Summary cards -->
-<div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-  <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
-    <p class="text-sm text-muted-foreground">Total spent</p>
-    <p class="mt-1 font-display text-2xl font-bold">₹{{ total_spent|floatformat:0 }}</p>
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-10">
+  <div class="astrae-card p-5">
+    <p class="text-xs text-muted uppercase font-medium">Total Spent</p>
+    <p class="mt-2 text-2xl font-bold">₹{{ total_spent|floatformat:0 }}</p>
   </div>
-  <div class="overflow-hidden rounded-2xl bg-gradient-brand p-5 text-white shadow-glow">
-    <p class="text-sm opacity-85">Total saved with ASTRAE</p>
-    <p class="mt-1 font-display text-2xl font-bold">₹{{ total_saved|floatformat:0 }}</p>
-    <p class="mt-1 text-xs opacity-80">You saved ₹{{ total_saved|floatformat:0 }} this month</p>
+  <div class="astrae-card p-5">
+    <p class="text-xs text-muted uppercase font-medium">Comparison Savings</p>
+    <p class="mt-2 text-2xl font-bold text-success">₹{{ total_saved|floatformat:0 }}</p>
   </div>
-  <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
-    <p class="text-sm text-muted-foreground">Reward points</p>
-    <p class="mt-1 font-display text-2xl font-bold text-primary">⚡ {{ total_points }}</p>
+  <div class="astrae-card p-5">
+    <p class="text-xs text-muted uppercase font-medium">Reward Points</p>
+    <p class="mt-2 text-2xl font-bold text-indigo">⚡ {{ total_points }}</p>
   </div>
-  <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
-    <p class="text-sm text-muted-foreground">Marketplace earnings</p>
-    <p class="mt-1 font-display text-2xl font-bold text-success">+{{ marketplace_earnings }} PTS</p>
+  <div class="astrae-card p-5">
+    <p class="text-xs text-muted uppercase font-medium">Marketplace Earnings</p>
+    <p class="mt-2 text-2xl font-bold">+{{ marketplace_earnings }} PTS</p>
   </div>
 </div>
 
-<!-- Charts -->
-<div class="mt-6 grid gap-6 lg:grid-cols-2">
-  <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
-    <h2 class="font-display text-base font-bold">Monthly Spending vs Savings</h2>
-    <canvas id="monthlyChart" class="mt-4" height="200"></canvas>
+<div class="grid gap-6 lg:grid-cols-2">
+  <div class="astrae-card p-5">
+    <h2 class="font-bold mb-4">Monthly Spending vs Savings</h2>
+    <canvas id="monthlyChart" height="200"></canvas>
   </div>
-  <div class="rounded-2xl border border-border bg-card p-5 shadow-soft">
-    <h2 class="font-display text-base font-bold">Category Spending</h2>
-    <canvas id="categoryChart" class="mt-4" height="200"></canvas>
-  </div>
-</div>
-
-<!-- Platform usage -->
-<div class="mt-6 rounded-2xl border border-border bg-card p-5 shadow-soft">
-  <h2 class="mb-4 font-display text-base font-bold">Platform Usage</h2>
-  <div class="space-y-3">
-    {% for p in platform_usage %}
-    <div class="flex items-center gap-3">
-      <span class="w-24 shrink-0 text-sm font-semibold">{{ p.platform }}</span>
-      <div class="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
-        <div class="h-full rounded-full bg-primary" style="width: {% widthratio p.count platform_usage.0.count 100 %}%"></div>
-      </div>
-      <span class="text-sm text-muted-foreground">{{ p.count }} orders</span>
-    </div>
-    {% empty %}
-    <p class="py-6 text-center text-sm text-muted-foreground">No platform usage data yet. Place orders to see your preferences.</p>
-    {% endfor %}
+  <div class="astrae-card p-5">
+    <h2 class="font-bold mb-4">Category Breakdown</h2>
+    <canvas id="categoryChart" height="200"></canvas>
   </div>
 </div>
-
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-  const monthlyData = {{ monthly_json|safe }};
-  const categoryData = {{ category_json|safe }};
-
-  const months = Object.keys(monthlyData).sort();
-  if (months.length && document.getElementById('monthlyChart')) {
-    new Chart(document.getElementById('monthlyChart'), {
-      type: 'bar',
-      data: {
-        labels: months,
-        datasets: [
-          { label: 'Spent (₹)', data: months.map(m => monthlyData[m].spent), backgroundColor: 'rgba(87,94,207,0.7)' },
-          { label: 'Saved (₹)', data: months.map(m => monthlyData[m].saved), backgroundColor: 'rgba(26,138,95,0.7)' },
-        ],
-      },
-      options: { responsive: true, scales: { y: { beginAtZero: true } } },
-    });
-  }
-
-  const catLabels = Object.keys(categoryData);
-  if (catLabels.length && document.getElementById('categoryChart')) {
-    new Chart(document.getElementById('categoryChart'), {
-      type: 'doughnut',
-      data: {
-        labels: catLabels,
-        datasets: [{ data: catLabels.map(c => categoryData[c]), backgroundColor: ['#575ECF','#FE7B02','#1a8a5f','#F858BC','#e0a52c','#6b6862'] }],
-      },
-      options: { responsive: true },
-    });
-  }
+const monthlyData = {{ monthly_json|safe }};
+const categoryData = {{ category_json|safe }};
+const months = Object.keys(monthlyData).sort();
+if (months.length) {
+  new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        { label: 'Spent', data: months.map(m => monthlyData[m].spent), backgroundColor: '#94A3B8' },
+        { label: 'Saved', data: months.map(m => monthlyData[m].saved), backgroundColor: '#4F46E5' },
+      ],
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+  });
+}
+const cats = Object.keys(categoryData);
+if (cats.length) {
+  new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: cats,
+      datasets: [{ data: cats.map(c => categoryData[c]), backgroundColor: ['#4F46E5','#06B6D4','#059669','#7C3AED','#64748B'] }],
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } },
+  });
+}
 </script>
 {% endblock %}
