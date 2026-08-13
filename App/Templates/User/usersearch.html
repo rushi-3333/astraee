@@ -114,16 +114,10 @@
           </ul>
           {% endif %}
           <div class="mt-5 flex flex-wrap gap-2">
-            <form action="{% url 'place_order' %}" method="POST" data-loading="Booking...">
-              {% csrf_token %}
-              <input type="hidden" name="platform" value="{{ recommended.platform }}">
-              <input type="hidden" name="category" value="{{ active_category }}">
-              <input type="hidden" name="item_title" value="{{ recommended.item_title }}">
-              <input type="hidden" name="final_price" value="{{ recommended.final_price }}">
-              <input type="hidden" name="original_price" value="{{ recommended.original_price }}">
-              <input type="hidden" name="cashback" value="{{ recommended.cashback|default:0 }}">
-              <button type="submit" class="btn-primary !bg-white !text-indigo hover:!bg-slate-100">Book now</button>
-            </form>
+            <a href="{% url 'book_offer' %}?platform={{ recommended.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ recommended.item_title|urlencode }}&final_price={{ recommended.final_price }}&original_price={{ recommended.original_price }}&cashback={{ recommended.cashback|default:0 }}"
+               class="btn-primary !bg-white !text-indigo hover:!bg-slate-100 inline-flex items-center justify-center !h-11 !px-5">
+              Book now
+            </a>
             {% if user.is_authenticated %}
             <form action="{% url 'add_to_wishlist' %}" method="POST">
               {% csrf_token %}
@@ -175,14 +169,8 @@
         <span>{{ item.eta_mins|default:"—" }} min</span>
         <span>★ {{ item.rating }}</span>
         <span class="font-semibold text-indigo">{{ item.astrae_score|default:"—" }}</span>
-        <form action="{% url 'place_order' %}" method="POST">
-          {% csrf_token %}
-          <input type="hidden" name="platform" value="{{ item.platform }}">
-          <input type="hidden" name="category" value="{{ active_category }}">
-          <input type="hidden" name="item_title" value="{{ item.item_title }}">
-          <input type="hidden" name="final_price" value="{{ item.final_price }}">
-          <button type="submit" class="btn-primary !h-8 !text-xs !px-3">Select</button>
-        </form>
+        <a href="{% url 'book_offer' %}?platform={{ item.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ item.item_title|urlencode }}&final_price={{ item.final_price }}"
+           class="btn-primary !h-8 !text-xs !px-3 inline-flex items-center">Select</a>
       </div>
       {% endfor %}
     </div>
@@ -202,14 +190,8 @@
           <span>★ {{ item.rating }}</span>
           <span>{{ item.eta_mins }} min</span>
         </div>
-        <form action="{% url 'place_order' %}" method="POST" class="mt-4">
-          {% csrf_token %}
-          <input type="hidden" name="platform" value="{{ item.platform }}">
-          <input type="hidden" name="category" value="{{ active_category }}">
-          <input type="hidden" name="item_title" value="{{ item.item_title }}">
-          <input type="hidden" name="final_price" value="{{ item.final_price }}">
-          <button type="submit" class="btn-primary w-full !h-10">Select</button>
-        </form>
+        <a href="{% url 'book_offer' %}?platform={{ item.platform|urlencode }}&category={{ active_category|urlencode }}&item_title={{ item.item_title|urlencode }}&final_price={{ item.final_price }}"
+           class="btn-primary w-full !h-10 inline-flex items-center justify-center mt-4">Select</a>
       </div>
       {% endfor %}
     </div>

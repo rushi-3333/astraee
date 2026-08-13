@@ -96,7 +96,7 @@
         <span class="text-muted">{{ event.starts_at|date:"M d, Y" }} → {{ event.ends_at|date:"M d, Y" }}</span>
       </div>
 
-      <a href="{% url 'usersearch' %}?category={{ event.category }}&q2={{ event.platform_name|urlencode }}" class="btn-primary w-full mt-4 !h-10">
+      <a href="{% url 'event_detail' event.id %}" class="btn-primary w-full mt-4 !h-10">
         View Offer
       </a>
     </div>

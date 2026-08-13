@@ -12,7 +12,9 @@ DATASET_PATH = os.path.join(settings.BASE_DIR, 'Model', 'user_interaction_rl_dat
 
 @transaction.atomic
 def process_booking(user, platform, category, item_title, final_price,
-                    original_price=None, discount=0, coupon_applied='', cashback=0):
+                    original_price=None, discount=0, coupon_applied='', cashback=0,
+                    event=None, scheduled_at=None, time_slot='', quantity=1,
+                    pickup_location='', delivery_address='', booking_notes=''):
     fp = Decimal(str(final_price))
     op = Decimal(str(original_price)) if original_price else fp
     savings = max(Decimal('0'), op - fp) + Decimal(str(cashback))
@@ -28,7 +30,14 @@ def process_booking(user, platform, category, item_title, final_price,
         coupon_applied=coupon_applied,
         cashback=Decimal(str(cashback)),
         astrae_savings=savings,
-        status='completed',
+        status='confirmed',
+        event=event,
+        scheduled_at=scheduled_at,
+        time_slot=time_slot,
+        quantity=max(1, int(quantity or 1)),
+        pickup_location=pickup_location or '',
+        delivery_address=delivery_address or '',
+        booking_notes=booking_notes or '',
     )
 
     earned_points = get_rule_points('order_completed', fallback=20)
@@ -51,11 +60,17 @@ def process_booking(user, platform, category, item_title, final_price,
         category=category,
     )
 
+    schedule_text = ''
+    if scheduled_at:
+        schedule_text = f' Scheduled for {scheduled_at:%b %d, %Y}'
+    if time_slot:
+        schedule_text += f' ({time_slot.replace("_", " ")})'
+
     Notification.objects.create(
         user=user,
         notification_type='order_completed',
-        title='Order Completed',
-        message=f'Your order on {platform} is confirmed. You earned +{earned_points} points!',
+        title='Booking Confirmed',
+        message=f'Your booking on {platform} is confirmed.{schedule_text} You earned +{earned_points} points!',
         link='/ASTRAEUser/userorders/',
     )
 

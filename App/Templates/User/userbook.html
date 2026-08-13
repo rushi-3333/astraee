@@ -1,0 +1,139 @@
+{% extends 'User/base_user.html' %}
+{% block title %}Book — {{ item_title|truncatechars:40 }} — ASTRAE{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  {% if event %}
+  <a href="{% url 'event_detail' event.id %}" class="text-sm text-indigo font-semibold hover:underline">← Back to offer details</a>
+  {% else %}
+  <a href="{% url 'usersearch' %}?category={{ category }}" class="text-sm text-indigo font-semibold hover:underline">← Back to compare</a>
+  {% endif %}
+</div>
+
+<div class="max-w-3xl mx-auto">
+  <div class="mb-8">
+    <h1 class="text-2xl sm:text-3xl font-bold">Complete your booking</h1>
+    <p class="mt-1 text-muted">Select date, time, and delivery details before confirming.</p>
+  </div>
+
+  <!-- Order summary -->
+  <div class="astrae-card p-5 mb-6 flex gap-4 items-start">
+    <span class="grid size-12 shrink-0 place-items-center rounded-xl text-sm font-bold text-white" style="background-color: {{ logo_color }};">
+      {{ logo_initial }}
+    </span>
+    <div class="min-w-0 flex-1">
+      <p class="text-xs font-semibold text-muted uppercase">{{ platform }}</p>
+      <h2 class="font-bold leading-snug">{{ item_title }}</h2>
+      <div class="mt-2 flex flex-wrap gap-3 text-sm">
+        <span class="badge bg-slate-100 text-muted capitalize">{{ category }}</span>
+        {% if final_price != '0' %}
+        <span class="font-bold text-success">₹{{ final_price }}</span>
+        {% endif %}
+        {% if event %}
+        <span class="text-indigo font-semibold">{{ event.main_benefit }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" class="astrae-card p-6 sm:p-8 space-y-6" data-loading="Confirming booking...">
+    {% csrf_token %}
+    {% if event %}<input type="hidden" name="event_id" value="{{ event.id }}">{% endif %}
+    <input type="hidden" name="platform" value="{{ platform }}">
+    <input type="hidden" name="category" value="{{ category }}">
+    <input type="hidden" name="item_title" value="{{ item_title }}">
+    <input type="hidden" name="final_price" value="{{ final_price }}">
+    <input type="hidden" name="original_price" value="{{ original_price }}">
+    <input type="hidden" name="cashback" value="{{ cashback }}">
+
+    <div>
+      <h3 class="font-bold mb-4">Schedule</h3>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="scheduled_date" class="text-xs font-medium text-muted">Preferred date <span class="text-destructive">*</span></label>
+          <input type="date" id="scheduled_date" name="scheduled_date" required
+                 value="{{ form_data.scheduled_date|default:default_date }}"
+                 class="astrae-input !h-11 mt-1 w-full">
+          {% if event %}
+          <p class="text-xs text-muted mt-1">Offer valid {{ event.starts_at|date:"M d" }} – {{ event.ends_at|date:"M d, Y" }}</p>
+          {% endif %}
+        </div>
+        <div>
+          <label for="time_slot" class="text-xs font-medium text-muted">Time slot <span class="text-destructive">*</span></label>
+          <select id="time_slot" name="time_slot" required class="astrae-input !h-11 mt-1 w-full">
+            <option value="">Select a slot</option>
+            {% for code, label in time_slots %}
+            <option value="{{ code }}" {% if form_data.time_slot == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    {% if needs_pickup %}
+    <div>
+      <h3 class="font-bold mb-4">Ride details</h3>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label for="pickup_location" class="text-xs font-medium text-muted">Pickup location <span class="text-destructive">*</span></label>
+          <input type="text" id="pickup_location" name="pickup_location" required
+                 value="{{ form_data.pickup_location|default:'' }}"
+                 placeholder="e.g. Hitech City Metro"
+                 class="astrae-input !h-11 mt-1 w-full">
+        </div>
+        <div>
+          <label for="delivery_address" class="text-xs font-medium text-muted">Drop location <span class="text-destructive">*</span></label>
+          <input type="text" id="delivery_address" name="delivery_address" required
+                 value="{{ form_data.delivery_address|default:'' }}"
+                 placeholder="e.g. Gachibowli, Hyderabad"
+                 class="astrae-input !h-11 mt-1 w-full">
+        </div>
+      </div>
+    </div>
+    {% elif needs_address %}
+    <div>
+      <h3 class="font-bold mb-4">Delivery details</h3>
+      <div>
+        <label for="delivery_address" class="text-xs font-medium text-muted">Delivery address <span class="text-destructive">*</span></label>
+        <input type="text" id="delivery_address" name="delivery_address" required
+               value="{{ form_data.delivery_address|default:'' }}"
+               placeholder="Flat / street / area / city / PIN"
+               class="astrae-input !h-11 mt-1 w-full">
+      </div>
+    </div>
+    {% endif %}
+
+    {% if needs_quantity %}
+    <div>
+      <label for="quantity" class="text-xs font-medium text-muted">Quantity</label>
+      <input type="number" id="quantity" name="quantity" min="1" max="99"
+             value="{{ form_data.quantity|default:'1' }}"
+             class="astrae-input !h-11 mt-1 w-full sm:max-w-[8rem]">
+    </div>
+    {% else %}
+    <input type="hidden" name="quantity" value="1">
+    {% endif %}
+
+    <div>
+      <label for="booking_notes" class="text-xs font-medium text-muted">Special instructions (optional)</label>
+      <textarea id="booking_notes" name="booking_notes" rows="3"
+                placeholder="Any notes for delivery, packaging, or preferences..."
+                class="astrae-input mt-1 w-full !h-auto py-3">{{ form_data.booking_notes|default:'' }}</textarea>
+    </div>
+
+    <div class="rounded-xl bg-slate-50 p-4 text-sm text-muted">
+      <p><strong class="text-foreground">What happens next?</strong></p>
+      <p class="mt-1">Your booking will be saved as <strong>Confirmed</strong> with the date and time you selected. Rewards and a demo coupon will be added to your account.</p>
+    </div>
+
+    <div class="flex flex-col-reverse sm:flex-row gap-3 pt-2">
+      {% if event %}
+      <a href="{% url 'event_detail' event.id %}" class="btn-secondary !h-11 flex-1 sm:flex-none sm:min-w-[8rem] text-center">Cancel</a>
+      {% else %}
+      <a href="{% url 'usersearch' %}?category={{ category }}" class="btn-secondary !h-11 flex-1 sm:flex-none sm:min-w-[8rem] text-center">Cancel</a>
+      {% endif %}
+      <button type="submit" class="btn-primary !h-11 flex-1">Confirm booking</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

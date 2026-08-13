@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash
@@ -6,7 +8,7 @@ from django.db.models import Sum, Count
 from django.db import transaction
 from django.utils import timezone
 from django.views.decorators.http import require_POST, require_GET
-from datetime import timedelta, date
+from datetime import timedelta, date, datetime
 import json
 
 from .models import (
@@ -19,6 +21,11 @@ from .services.unified_search_service import execute_smart_search
 from .services.search_service import detect_category
 from .services.deals_service import get_deals, compute_deal_score
 from .services.events_service import get_events, get_event_counts, PLATFORM_COLORS
+from .services.booking_service import (
+    TIME_SLOTS, validate_booking, build_scheduled_at,
+    category_needs_address, category_needs_pickup, category_needs_quantity,
+    get_default_booking_date,
+)
 from .services.wallet_service import get_wallet_summary, sync_wallet_from_rewards
 from .services.reward_service import grant_reward, get_rule_points, ensure_default_rules
 from .services.coupon_verifier import verify_and_update_coupon, DemoCouponVerifier
@@ -253,6 +260,105 @@ def userevents(request):
     return render(request, 'User/userevents.html', context)
 
 
+def event_detail(request, event_id):
+    event = get_object_or_404(PlatformEvent, pk=event_id, is_active=True)
+    color, initial = PLATFORM_COLORS.get(event.platform_name, ('#4F46E5', event.platform_name[:2]))
+    event.logo_color = color
+    event.logo_initial = initial
+
+    context = {
+        'event': event,
+        'unread_notifications': get_unread_count(request.user),
+    }
+    return render(request, 'User/userevent_detail.html', context)
+
+
+@login_required
+def book_offer(request):
+    """Booking form — date, time slot, address, and quantity before order placement."""
+    event = None
+    event_id = request.GET.get('event_id') or request.POST.get('event_id')
+    if event_id:
+        event = get_object_or_404(PlatformEvent, pk=event_id, is_active=True)
+
+    if event:
+        platform = event.platform_name
+        category = event.category
+        item_title = event.title
+        final_price = '0'
+        original_price = '0'
+        cashback = '0'
+    else:
+        platform = request.GET.get('platform') or request.POST.get('platform', '')
+        category = request.GET.get('category') or request.POST.get('category', 'shopping')
+        item_title = request.GET.get('item_title') or request.POST.get('item_title', '')
+        final_price = request.GET.get('final_price') or request.POST.get('final_price', '0')
+        original_price = request.GET.get('original_price') or request.POST.get('original_price', final_price)
+        cashback = request.GET.get('cashback') or request.POST.get('cashback', '0')
+
+    if not platform or not item_title:
+        messages.error(request, 'Missing booking details. Please select an offer or compare result again.')
+        return redirect('userevents' if event_id else 'usersearch')
+
+    if request.method == 'POST':
+        errors = validate_booking(category, request.POST, event=event)
+        if errors:
+            for msg in errors.values():
+                messages.error(request, msg)
+        else:
+            scheduled_date = datetime.strptime(request.POST['scheduled_date'], '%Y-%m-%d').date()
+            time_slot = request.POST['time_slot']
+            scheduled_at = build_scheduled_at(scheduled_date, time_slot)
+            order, reward, coupon = process_booking(
+                user=request.user,
+                platform=platform,
+                category=category,
+                item_title=item_title,
+                final_price=final_price,
+                original_price=original_price,
+                discount=request.POST.get('discount', 0),
+                coupon_applied=request.POST.get('coupon', ''),
+                cashback=cashback,
+                event=event,
+                scheduled_at=scheduled_at,
+                time_slot=time_slot,
+                quantity=request.POST.get('quantity', 1),
+                pickup_location=request.POST.get('pickup_location', ''),
+                delivery_address=request.POST.get('delivery_address', ''),
+                booking_notes=request.POST.get('booking_notes', ''),
+            )
+            slot_label = dict(TIME_SLOTS).get(time_slot, time_slot)
+            messages.success(
+                request,
+                f'Booking confirmed on {order.platform} for {scheduled_at:%b %d, %Y} ({slot_label}). '
+                f'+{reward.points_earned} points & coupon {coupon.coupon_code} earned.',
+            )
+            return redirect('userorders')
+
+    color, initial = PLATFORM_COLORS.get(platform, ('#4F46E5', platform[:2]))
+    default_date = get_default_booking_date(event)
+
+    context = {
+        'event': event,
+        'platform': platform,
+        'category': category,
+        'item_title': item_title,
+        'final_price': final_price,
+        'original_price': original_price,
+        'cashback': cashback,
+        'logo_color': color,
+        'logo_initial': initial,
+        'time_slots': TIME_SLOTS,
+        'default_date': default_date.isoformat(),
+        'needs_address': category_needs_address(category),
+        'needs_pickup': category_needs_pickup(category),
+        'needs_quantity': category_needs_quantity(category),
+        'form_data': request.POST if request.method == 'POST' else {},
+        'unread_notifications': get_unread_count(request.user),
+    }
+    return render(request, 'User/userbook.html', context)
+
+
 # ─── ORDERS ──────────────────────────────────────────────────────────────────
 
 @login_required
@@ -425,23 +531,13 @@ def update_profile(request):
 
 @login_required
 def place_order(request):
+    """Legacy endpoint — redirect to booking form instead of instant order."""
     if request.method == 'POST':
-        order, reward, coupon = process_booking(
-            user=request.user,
-            platform=request.POST.get('platform', 'ASTRAE Partner'),
-            category=request.POST.get('category', 'ride'),
-            item_title=request.POST.get('item_title', 'Service Booking'),
-            final_price=request.POST.get('final_price', '100.0'),
-            original_price=request.POST.get('original_price'),
-            discount=request.POST.get('discount', 0),
-            coupon_applied=request.POST.get('coupon', ''),
-            cashback=request.POST.get('cashback', 0),
-        )
-        messages.success(
-            request,
-            f'Order placed on {order.platform}! +{reward.points_earned} points & coupon {coupon.coupon_code} earned.',
-        )
-        return redirect('userorders')
+        params = {k: request.POST.get(k, '') for k in (
+            'platform', 'category', 'item_title', 'final_price',
+            'original_price', 'cashback', 'event_id',
+        ) if request.POST.get(k)}
+        return redirect(f"{reverse('book_offer')}?{urlencode(params)}")
     return redirect('usersearch')
 
 

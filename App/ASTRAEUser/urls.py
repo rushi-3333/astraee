@@ -7,9 +7,11 @@ urlpatterns = [
     path('usersearch/', views.usersearch, name='usersearch'),
     path('userdeals/', views.userdeals, name='userdeals'),
     path('userevents/', views.userevents, name='userevents'),
+    path('events/<int:event_id>/', views.event_detail, name='event_detail'),
 
     # Orders & Booking
     path('userorders/', views.userorders, name='userorders'),
+    path('book/', views.book_offer, name='book_offer'),
     path('place_order/', views.place_order, name='place_order'),
 
     # Coupons & Marketplace

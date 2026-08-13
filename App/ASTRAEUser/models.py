@@ -28,7 +28,16 @@ class Order(models.Model):
     coupon_applied = models.CharField(max_length=100, blank=True, default='')
     cashback = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     astrae_savings = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='completed')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='confirmed')
+    event = models.ForeignKey(
+        'PlatformEvent', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders',
+    )
+    scheduled_at = models.DateTimeField(null=True, blank=True)
+    time_slot = models.CharField(max_length=50, blank=True, default='')
+    quantity = models.PositiveIntegerField(default=1)
+    pickup_location = models.CharField(max_length=255, blank=True, default='')
+    delivery_address = models.CharField(max_length=255, blank=True, default='')
+    booking_notes = models.TextField(blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -41,6 +50,11 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.platform} ({self.item_title})"
+
+    @property
+    def time_slot_label(self):
+        from ASTRAEUser.services.booking_service import TIME_SLOTS
+        return dict(TIME_SLOTS).get(self.time_slot, self.time_slot.replace('_', ' ').title())
 
 
 class Reward(models.Model):
